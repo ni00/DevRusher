@@ -69,12 +69,14 @@ DevRusher 只提交 `public/content`
    重新生成并应用选择结果。普通重建无需重复此步骤。
 6. 运行 `pnpm content review core` 评审精选候选，再运行 `pnpm content import`
    应用结果；用 `pnpm content review core --check` 确认没有待评审候选。
-7. 运行 `pnpm content build` 生成版本化题包。
+7. 运行 `pnpm content build`
+   统一题干为大陆简体中文并生成版本化题包；来源原文仍保留在
+   `occurrences.originalPrompt`，不修改其繁简和措辞。
 8. 运行
    `pnpm content check`，验证来源、结构、校验和、重复项、错误前提和已知生成模板。
 9. 只提交当前版本的 `public/content/manifest.json` 与 `public/content/packs/`。
 
-发布门禁只检查来源、字段结构、校验和、重复题、错误前提、上下文碎片和已知生成模板。
+发布门禁检查来源、字段结构、校验和、简体题干、重复题、错误前提、上下文碎片和已知生成模板。
 
 ## 临时输入
 

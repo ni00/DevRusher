@@ -7,6 +7,29 @@ import {
   hasClientTechnologyCoreRelevance,
   hasKotlinMultiplatformCoreRelevance,
 } from "../scripts/content/source-quality.mjs";
+import {
+  isNormalizedSimplifiedChinese,
+  normalizeSimplifiedChinese,
+} from "../scripts/content/chinese-script.mjs";
+
+test("normalizes traditional question text without rewriting technical terms", () => {
+  assert.equal(
+    normalizeSimplifiedChinese(
+      "參數化輸入可以防禦 SQL injection，為什麼仍需要對所有使用者輸入進行處理以避免 XSS？"
+    ),
+    "参数化输入可以防御 SQL injection，为什么仍需要对所有用户输入进行处理以避免 XSS？"
+  );
+  assert.equal(
+    normalizeSimplifiedChinese(
+      "文件、程序、核心、向量和时间序列分别解决什么问题？"
+    ),
+    "文件、程序、核心、向量和时间序列分别解决什么问题？"
+  );
+  assert.equal(
+    isNormalizedSimplifiedChinese("最小權限原則如何降低攻擊影響？"),
+    false
+  );
+});
 
 test("rejects source headings and fragments", () => {
   assert.equal(

@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  isNormalizedSimplifiedChinese,
+  normalizeSimplifiedChinese,
+} from "./chinese-script.mjs";
 import { topicTaxonomy } from "./topic-taxonomy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -116,6 +120,9 @@ function validateQuestion(question) {
     return "invalid-prompt";
   }
   if (question.prompt.length > 1_000) return "prompt-too-long";
+  if (!isNormalizedSimplifiedChinese(question.prompt)) {
+    return "non-simplified-prompt";
+  }
   if (!questionTypes.has(question.questionType)) {
     return "invalid-question-type";
   }
@@ -367,7 +374,12 @@ async function buildContent() {
     }
     return { ...question, prompt: translation.translatedPrompt.trim() };
   });
-  const questions = mergeExactDuplicates(translatedQuestions);
+  const questions = mergeExactDuplicates(
+    translatedQuestions.map(question => ({
+      ...question,
+      prompt: normalizeSimplifiedChinese(question.prompt),
+    }))
+  );
   const collectionDefinitions = new Map(
     curated.collections.map(collection => [collection.id, collection])
   );

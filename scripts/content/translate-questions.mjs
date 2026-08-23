@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { normalizeSimplifiedChinese } from "./chinese-script.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const curatedPath = join(root, "content/work/curated.json");
@@ -312,9 +313,8 @@ async function requestTranslation(batch, attempt = 1) {
     return batch.map(item => {
       if (!outputById.has(item.id))
         throw new Error(`Missing output ${item.id}`);
-      const translatedPrompt = normalizeTranslation(
-        item.prompt,
-        outputById.get(item.id)
+      const translatedPrompt = normalizeSimplifiedChinese(
+        normalizeTranslation(item.prompt, outputById.get(item.id))
       );
       const rejection = validateTranslation(item.prompt, translatedPrompt);
       if (rejection) throw new Error(`${item.id}: ${rejection}`);
