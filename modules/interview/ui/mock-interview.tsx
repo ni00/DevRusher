@@ -23,7 +23,6 @@ import { useAiSettings } from "@/modules/ai/ui/use-ai-settings";
 import {
   getTrack,
   trackDefinitions,
-  type Audience,
   type TrackId,
 } from "@/modules/catalog/domain/question";
 import { parseResume } from "../infrastructure/resume-parser";
@@ -39,14 +38,12 @@ interface PendingGeneration {
 
 interface InterviewSetup {
   trackId: TrackId;
-  audience: Audience;
   role: string;
   rounds: 5 | 10;
 }
 
 const defaultSetup: InterviewSetup = {
   trackId: "frontend",
-  audience: "experienced",
   role: "",
   rounds: 5,
 };
@@ -187,7 +184,6 @@ export function MockInterview() {
     const context = [
       settings.systemPrompt,
       `目标方向：${getTrack(setup.trackId).label}`,
-      `候选阶段：${setup.audience === "campus" ? "校招" : "社招"}`,
       setup.role ? `目标岗位：${setup.role}` : "",
       resumeText
         ? `以下是候选人确认发送的简历文本，只能据此提问，不得补充不存在的经历：\n${resumeText}`
@@ -290,23 +286,6 @@ export function MockInterview() {
               </select>
             </label>
             <label className="grid gap-2">
-              <Label htmlFor="audience">求职阶段</Label>
-              <select
-                id="audience"
-                value={setup.audience}
-                onChange={event =>
-                  setSetup(current => ({
-                    ...current,
-                    audience: event.target.value as Audience,
-                  }))
-                }
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/25"
-              >
-                <option value="campus">校招</option>
-                <option value="experienced">社招</option>
-              </select>
-            </label>
-            <label className="grid gap-2 sm:col-span-2">
               <Label htmlFor="target-role">目标岗位（可选）</Label>
               <Input
                 id="target-role"

@@ -150,6 +150,296 @@ const sourceConfigs = [
     sourceKind: "official-documentation",
     maxSections: 60,
   },
+  {
+    directory: "curated-system-design-primer",
+    repository: "donnemartin/system-design-primer",
+    branch: "master",
+    trackId: "backend",
+    category: "Backend System Design",
+    sourceKind: "curated-repository",
+    maxSections: 120,
+    fingerprintScope: "backend-system-design",
+  },
+  {
+    directory: "official-nowinandroid",
+    repository: "android/nowinandroid",
+    branch: "main",
+    trackId: "mobile",
+    category: "Android Architecture",
+    sourceKind: "official-documentation",
+    maxSections: 50,
+  },
+  {
+    directory: "official-swift-book",
+    repository: "swiftlang/swift-book",
+    branch: "main",
+    trackId: "mobile",
+    category: "iOS Swift",
+    sourceKind: "official-documentation",
+    maxSections: 100,
+  },
+  {
+    directory: "official-flutter-docs",
+    repository: "flutter/website",
+    branch: "main",
+    trackId: "mobile",
+    category: "Flutter",
+    sourceKind: "official-documentation",
+    maxSections: 100,
+  },
+  {
+    directory: "official-react-native-docs",
+    repository: "facebook/react-native-website",
+    branch: "main",
+    trackId: "mobile",
+    category: "React Native",
+    sourceKind: "official-documentation",
+    maxSections: 100,
+  },
+  {
+    directory: "official-kmp-docs",
+    repository: "JetBrains/kotlin-multiplatform-dev-docs",
+    branch: "master",
+    trackId: "mobile",
+    category: "Kotlin Multiplatform",
+    sourceKind: "official-documentation",
+    maxSections: 180,
+  },
+  {
+    directory: "official-electron-docs",
+    repository: "electron/electron",
+    branch: "main",
+    trackId: "mobile",
+    category: "Electron",
+    sourceKind: "official-documentation",
+    maxSections: 140,
+  },
+  {
+    directory: "official-lynx-docs",
+    repository: "lynx-family/lynx-website",
+    branch: "main",
+    trackId: "mobile",
+    category: "Lynx",
+    sourceKind: "official-documentation",
+    maxSections: 160,
+  },
+  {
+    directory: "official-tauri-docs",
+    repository: "tauri-apps/tauri-docs",
+    branch: "v2",
+    trackId: "mobile",
+    category: "Tauri",
+    sourceKind: "official-documentation",
+    maxSections: 150,
+  },
+  {
+    directory: "official-qt-docs",
+    repository: "qt/qtdoc",
+    branch: "dev",
+    trackId: "mobile",
+    category: "Qt QML",
+    sourceKind: "official-documentation",
+    maxSections: 150,
+  },
+  {
+    directory: "official-uniapp-x-docs",
+    repository: "dcloudio/unidocs-uni-app-x-zh",
+    branch: "master",
+    trackId: "mobile",
+    category: "uni-app x UTS UVue",
+    sourceKind: "official-documentation",
+    maxSections: 160,
+  },
+  {
+    directory: "official-deer-flow",
+    repository: "bytedance/deer-flow",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "DeerFlow Agent Framework Harness",
+    sourceKind: "curated-repository",
+    maxSections: 70,
+  },
+  {
+    directory: "official-pi-mono",
+    repository: "badlogic/pi-mono",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Pi Coding Agent Framework Harness",
+    sourceKind: "curated-repository",
+    maxSections: 70,
+  },
+  {
+    directory: "official-eve",
+    repository: "vercel/eve",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Eve Durable Agent Framework",
+    sourceKind: "curated-repository",
+    maxSections: 60,
+  },
+  {
+    directory: "official-flue",
+    repository: "withastro/flue",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Flue Sandbox Agent Framework",
+    sourceKind: "curated-repository",
+    maxSections: 50,
+  },
+  {
+    directory: "official-mem0",
+    repository: "mem0ai/mem0",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Agent Memory Mem0",
+    sourceKind: "curated-repository",
+    maxSections: 60,
+  },
+  {
+    directory: "official-mom",
+    repository: "momhq/mom",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Agent Memory Ledger",
+    sourceKind: "curated-repository",
+    maxSections: 30,
+  },
+  {
+    directory: "official-hermes-agent",
+    repository: "NousResearch/hermes-agent",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Hermes Self Improving Agent",
+    sourceKind: "curated-repository",
+    maxSections: 60,
+  },
+  {
+    directory: "official-openclaw",
+    repository: "openclaw/openclaw",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "OpenClaw Personal Agent Framework",
+    sourceKind: "curated-repository",
+    maxSections: 60,
+  },
+  {
+    directory: "official-agentenv",
+    repository: "kvcache-ai/AgentENV",
+    branch: "main",
+    trackId: "agent-evaluation",
+    category: "Agent Evaluation Environment",
+    sourceKind: "benchmark",
+    maxSections: 60,
+  },
+  {
+    directory: "official-microsandbox",
+    repository: "superradcompany/microsandbox",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "MicroVM Agent Sandbox",
+    sourceKind: "curated-repository",
+    maxSections: 50,
+  },
+  {
+    directory: "official-agent-infra-sandbox",
+    repository: "agent-infra/sandbox",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Agent Browser Shell Sandbox",
+    sourceKind: "curated-repository",
+    maxSections: 50,
+  },
+  {
+    directory: "official-k8s-agent-sandbox",
+    repository: "kubernetes-sigs/agent-sandbox",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "Kubernetes Agent Sandbox",
+    sourceKind: "official-documentation",
+    maxSections: 60,
+  },
+  {
+    directory: "official-oci-runtime-spec",
+    repository: "opencontainers/runtime-spec",
+    branch: "main",
+    trackId: "platform",
+    category: "OCI Runtime Security",
+    sourceKind: "official-documentation",
+    maxSections: 50,
+  },
+  {
+    directory: "official-openviking",
+    repository: "volcengine/OpenViking",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "OpenViking Agent Memory Context Database",
+    sourceKind: "curated-repository",
+    maxSections: 60,
+  },
+  {
+    directory: "official-agentscope",
+    repository: "agentscope-ai/agentscope",
+    branch: "main",
+    trackId: "agent-engineering",
+    category: "AgentScope Runtime Framework",
+    sourceKind: "curated-repository",
+    maxSections: 70,
+  },
+  {
+    directory: "official-owasp-wstg",
+    repository: "OWASP/wstg",
+    branch: "master",
+    trackId: "quality",
+    category: "Security Testing",
+    sourceKind: "official-documentation",
+    maxSections: 120,
+  },
+  {
+    directory: "official-owasp-wstg",
+    repository: "OWASP/wstg",
+    branch: "master",
+    trackId: "frontend",
+    category: "Frontend Security",
+    sourceKind: "official-documentation",
+    maxSections: 40,
+    fingerprintScope: "frontend-security",
+  },
+  {
+    directory: "official-playwright-docs",
+    repository: "microsoft/playwright.dev",
+    branch: "main",
+    trackId: "quality",
+    category: "Test Automation Playwright",
+    sourceKind: "official-documentation",
+    maxSections: 100,
+  },
+  {
+    directory: "official-k6-docs",
+    repository: "grafana/k6-docs",
+    branch: "main",
+    trackId: "quality",
+    category: "Performance Testing k6",
+    sourceKind: "official-documentation",
+    maxSections: 80,
+  },
+  {
+    directory: "official-kubernetes-docs",
+    repository: "kubernetes/website",
+    branch: "main",
+    trackId: "platform",
+    category: "Kubernetes SRE Reliability",
+    sourceKind: "official-documentation",
+    maxSections: 140,
+  },
+  {
+    directory: "official-react-docs",
+    repository: "reactjs/react.dev",
+    branch: "main",
+    trackId: "frontend",
+    category: "React Architecture",
+    sourceKind: "official-documentation",
+    maxSections: 100,
+  },
 ];
 
 function readNumberArgument(name, fallback) {
@@ -168,6 +458,7 @@ const limit = process.argv.some(value => value.startsWith("--limit="))
   ? readNumberArgument("limit", 1)
   : undefined;
 const checkOnly = process.argv.includes("--check");
+const finalizeOnly = process.argv.includes("--finalize");
 
 const ignoredPathPattern =
   /(?:^|\/)(?:node_modules|vendor|generated|translations|locale|i18n|changelog|release[-_]?notes?|contributing|code_of_conduct|security\.md)(?:\/|$)/i;
@@ -198,11 +489,11 @@ function categoryForQuestion(section, question) {
     return "Software Architecture";
   }
   if (section.trackId === "platform") {
-    if (/kubernetes|k8s|pod|service|cluster|operator/i.test(value)) {
-      return "Kubernetes";
-    }
     if (/sre|reliability|incident|capacity|slo|可靠性|事故|容量/i.test(value)) {
       return "SRE Reliability";
+    }
+    if (/kubernetes|k8s|pod|service|cluster|operator/i.test(value)) {
+      return "Kubernetes";
     }
     return "OpenTelemetry eBPF Observability";
   }
@@ -281,6 +572,39 @@ function markdownSections(content) {
   }));
 }
 
+function qdocSections(content) {
+  const lines = content.split(/\r?\n/);
+  const markers = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const marker = /^\s*\\(?:title|section[1-4])\s+(.+)$/.exec(lines[index]);
+    if (!marker) continue;
+    markers.push({
+      line: index,
+      contentStart: index + 1,
+      heading: cleanHeading(marker[1]),
+    });
+  }
+  return markers.map((marker, index) => {
+    const body = lines
+      .slice(marker.contentStart, markers[index + 1]?.line ?? lines.length)
+      .join("\n")
+      .replace(/^\s*\\(?:li|value|row|header)\s+/gm, "")
+      .replace(
+        /^\s*\\(?:brief|note|warning|since|ingroup|keyword|target|sa)\s+/gm,
+        ""
+      )
+      .replace(
+        /^\s*\\(?:list|endlist|code|endcode|quotation|endquotation)\b.*$/gm,
+        ""
+      );
+    return {
+      heading: marker.heading,
+      line: marker.line + 1,
+      body: cleanBody(body),
+    };
+  });
+}
+
 function sectionScore(section, path) {
   let score = Math.min(20, Math.floor(section.body.length / 250));
   if (
@@ -303,15 +627,20 @@ async function discoverSections() {
     const files = (await walk(base)).filter(path => {
       const relativePath = relative(base, path).split(sep).join("/");
       return (
-        new Set([".md", ".mdx", ".rst"]).has(extname(path).toLowerCase()) &&
-        !ignoredPathPattern.test(relativePath)
+        new Set([".md", ".mdx", ".rst", ".qdoc"]).has(
+          extname(path).toLowerCase()
+        ) && !ignoredPathPattern.test(relativePath)
       );
     });
     const candidates = [];
     for (const path of files) {
       const relativePath = relative(base, path).split(sep).join("/");
       const content = await readFile(path, "utf8");
-      for (const section of markdownSections(content)) {
+      const sections =
+        extname(path).toLowerCase() === ".qdoc"
+          ? qdocSections(content)
+          : markdownSections(content);
+      for (const section of sections) {
         if (
           section.heading.length < 4 ||
           section.body.length < 220 ||
@@ -321,7 +650,7 @@ async function discoverSections() {
         }
         const excerpt = section.body.slice(0, 4_500);
         const fingerprint = sha256(
-          `${config.repository}:${relativePath}:${section.line}:${excerpt}`
+          `${config.fingerprintScope ? `${config.fingerprintScope}:` : ""}${config.repository}:${relativePath}:${section.line}:${excerpt}`
         );
         candidates.push({
           id: `section:${fingerprint.slice(0, 20)}`,
@@ -505,7 +834,9 @@ if (!apiKey || !baseUrl || !model) {
 
 const sections = await discoverSections();
 const checkpoint = new Map(
-  (await readCheckpoint()).map(item => [item.fingerprint, item])
+  (await readCheckpoint())
+    .filter(item => !/HTTP 429|GoUsageLimitError/.test(item.warning ?? ""))
+    .map(item => [item.fingerprint, item])
 );
 const pending = sections.filter(item => !checkpoint.has(item.fingerprint));
 const sectionCounts = Object.groupBy(sections, item => item.trackId);
@@ -517,7 +848,7 @@ for (const trackId of Object.keys(sectionCounts)) {
 }
 if (checkOnly) process.exit(0);
 
-const selected = limit ? pending.slice(0, limit) : pending;
+const selected = finalizeOnly ? [] : limit ? pending.slice(0, limit) : pending;
 const batches = [];
 for (let index = 0; index < selected.length; index += batchSize) {
   batches.push(selected.slice(index, index + batchSize));

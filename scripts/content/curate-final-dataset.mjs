@@ -1,11 +1,20 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getPromptCompletenessRisk } from "./source-quality.mjs";
+import {
+  getPromptCompletenessRisk,
+  hasClientTechnologyCoreRelevance,
+  hasKotlinMultiplatformCoreRelevance,
+} from "./source-quality.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const curatedPath = join(root, "content/work/curated.json");
 const translationsPath = join(root, "content/work/translations.json");
+const priorityPaths = [
+  "2026-official-stack-expansion.json",
+  "official-ai-labs-2026.json",
+  "emerging-agent-projects.json",
+].map(file => join(root, "content/inbox", file));
 const outputPath = join(root, "content/inbox/manual-curation.json");
 const reportPath = join(root, "content/reports/curation.json");
 
@@ -25,137 +34,142 @@ const trackOrder = [
 // enforce them as permanent publication gates.
 const trackRules = {
   fundamentals: {
-    limit: 850,
+    limit: 900,
     topicCaps: {
-      algorithms: 200,
-      "engineering-practice": 130,
-      networking: 120,
-      "computer-systems": 110,
-      databases: 100,
-      "software-design": 90,
-      "distributed-systems": 100,
+      algorithms: 220,
+      "engineering-practice": 150,
+      networking: 130,
+      "computer-systems": 120,
+      databases: 150,
+      "software-design": 130,
+      "distributed-systems": 50,
     },
   },
   frontend: {
-    limit: 950,
+    limit: 1000,
     topicCaps: {
       "javascript-typescript": 230,
       "web-platform": 220,
-      browser: 130,
-      react: 110,
+      browser: 120,
+      react: 140,
       vue: 100,
       "frontend-engineering": 100,
-      "other-frameworks": 90,
-      "frontend-performance": 80,
-      "frontend-security": 50,
-      "frontend-architecture": 50,
+      "other-frameworks": 70,
+      "frontend-performance": 70,
+      "frontend-security": 35,
+      "frontend-architecture": 25,
     },
   },
   backend: {
-    limit: 900,
+    limit: 920,
     topicCaps: {
-      java: 180,
-      nodejs: 160,
-      cache: 120,
-      go: 110,
-      "distributed-systems": 120,
-      messaging: 110,
-      "relational-databases": 120,
-      "backend-system-design": 100,
+      java: 190,
+      nodejs: 170,
+      cache: 100,
+      go: 100,
+      "distributed-systems": 110,
+      messaging: 90,
+      "relational-databases": 90,
+      "backend-system-design": 140,
     },
   },
   mobile: {
-    limit: 850,
+    limit: 1000,
     topicCaps: {
-      android: 150,
-      ios: 150,
-      "cross-platform": 130,
-      "modern-cross-platform": 120,
+      android: 140,
+      ios: 140,
+      "kotlin-multiplatform": 190,
+      "cross-platform": 70,
+      lynx: 70,
+      "uni-app-x": 50,
+      electron: 75,
+      tauri: 50,
+      qt: 40,
       flutter: 100,
-      harmonyos: 100,
-      "react-native": 80,
+      harmonyos: 70,
+      "react-native": 75,
     },
   },
   quality: {
-    limit: 800,
+    limit: 925,
     topicCaps: {
-      "test-automation": 170,
+      "test-automation": 180,
       "test-strategy": 150,
-      "unit-testing": 110,
-      "advanced-testing": 120,
-      "integration-contract": 100,
-      "performance-testing": 80,
-      "security-testing": 70,
+      "unit-testing": 120,
+      "advanced-testing": 130,
+      "integration-contract": 110,
+      "performance-testing": 110,
+      "security-testing": 120,
     },
   },
   platform: {
-    limit: 850,
+    limit: 910,
     topicCaps: {
-      containers: 140,
-      "delivery-iac": 130,
-      "linux-automation": 130,
-      observability: 140,
-      kubernetes: 140,
-      "sre-reliability": 120,
+      containers: 160,
+      "delivery-iac": 160,
+      "linux-automation": 120,
+      observability: 270,
+      kubernetes: 250,
+      "sre-reliability": 40,
     },
   },
   "llm-algorithm": {
-    limit: 850,
+    limit: 915,
     topicCaps: {
       "model-architecture": 160,
-      "gpu-kernels": 140,
+      "gpu-kernels": 210,
       "ml-foundations": 130,
-      "post-training": 150,
-      "inference-serving": 160,
-      "model-evaluation": 110,
+      "post-training": 180,
+      "inference-serving": 200,
+      "model-evaluation": 90,
     },
   },
   "agent-evaluation": {
-    limit: 800,
+    limit: 840,
     topicCaps: {
-      "evaluation-design": 130,
-      "search-browser-rag": 90,
-      "datasets-benchmarks": 100,
-      "online-regression": 80,
-      "evaluation-platform": 70,
-      "safety-robustness": 80,
-      "trajectory-evaluation": 80,
-      "coding-tool-evaluation": 90,
-      "judge-human": 70,
-      "efficiency-evaluation": 60,
+      "evaluation-design": 270,
+      "search-browser-rag": 160,
+      "datasets-benchmarks": 60,
+      "online-regression": 50,
+      "evaluation-platform": 35,
+      "safety-robustness": 40,
+      "trajectory-evaluation": 35,
+      "coding-tool-evaluation": 240,
+      "judge-human": 25,
+      "efficiency-evaluation": 25,
     },
   },
   "agent-engineering": {
-    limit: 900,
+    limit: 890,
     topicCaps: {
-      "agent-foundations": 170,
+      "agent-foundations": 230,
       "context-engineering": 100,
-      "tool-engineering": 120,
-      rag: 100,
+      "tool-engineering": 180,
+      rag: 90,
       "agent-frameworks": 100,
-      "agent-production": 110,
-      "memory-state": 100,
-      "multi-agent": 90,
-      "agent-safety": 80,
+      "agent-production": 80,
+      "memory-state": 70,
+      "multi-agent": 130,
+      "agent-safety": 40,
     },
   },
 };
 
 const relevancePatterns = {
   fundamentals:
-    /算法|数据结构|复杂度|网络|tcp|udp|http|quic|dns|线程|进程|内存|操作系统|cpu|数据库|事务|索引|分布式|一致性|编程语言|软件设计|缓存|锁|并发|algorithm|data structure|big o|sorting|search|tree|graph|database|networking|concurrency|oop|software architecture|distributed systems|compiler|runtime|wasm|wasi|ebpf/i,
+    /算法|数据结构|复杂度|网络|tcp|udp|http|quic|dns|线程|进程|内存|操作系统|cpu|数据库|事务|索引|分布式|一致性|编程语言|软件设计|缓存|锁|并发|algorithm|data structure|big o|sorting|search|tree|graph|database|networking|concurrency|oop|software architecture|operating system|distributed systems|compiler|runtime|wasm|wasi|ebpf|io_uring/i,
   frontend:
-    /javascript|typescript|css|html|dom|浏览器|react|vue|angular|next\.?js|webpack|vite|rspack|rsbuild|rolldown|oxc|biome|webgpu|前端|组件|渲染|web|node|npm|pnpm|bun|deno/i,
+    /javascript|typescript|css|html|dom|浏览器|react|vue|angular|next\.?js|webpack|vite|rspack|rsbuild|rolldown|oxc|biome|webgpu|前端|组件|渲染|web|node|npm|pnpm|bun|deno|agent|mcp|streaming|流式|multimodal|多模态|\bui\b/i,
   backend:
-    /后端|服务端|java|spring|node\.?js|golang|\bgo\b|rust|python|api|rpc|grpc|数据库|mysql|postgres|redis|kafka|消息|缓存|事务|分布式|微服务|网关|限流|鉴权|并发|线程|进程|v8|serverless/i,
+    /后端|服务端|backend|architecture|java|spring|node\.?js|golang|\bgo\b|rust|python|api|rpc|grpc|数据库|context database|agent-as-a-service|mysql|postgres|redis|kafka|消息|缓存|事务|分布式|微服务|网关|限流|鉴权|并发|线程|进程|v8|serverless/i,
   mobile:
-    /android|ios|swift|objective-c|kotlin|kmp|compose|flutter|dart|react native|lynx|harmony|鸿蒙|arkts|arkui|移动端|小程序|uni-?app|electron|xamarin|ionic/i,
+    /android|ios|swift|objective-c|kotlin|kmp|compose|flutter|dart|react native|lynx|harmony|鸿蒙|arkts|arkui|移动端|客户端|小程序|uni-?app|uniapp|\buts\b|uvue|electron|tauri|(?:^|\W)qt(?:\W|$)|qml|xamarin|ionic/i,
   quality:
-    /测试|质量|用例|断言|mock|覆盖率|selenium|playwright|cypress|fuzz|模糊|mutation|变异|property|契约|压测|性能|可靠性|故障注入|回归|验证|testing|test\b/i,
+    /测试|质量|用例|断言|mock|覆盖率|selenium|playwright|cypress|fuzz|模糊|mutation|变异|property|契约|压测|性能|可靠性|故障注入|回归|验证|code review|pre-pr|testing|test\b/i,
   platform:
-    /linux|容器|docker|oci|kubernetes|k8s|helm|argo|gitops|terraform|ansible|ci\/cd|流水线|部署|发布|运维|devops|sre|可观测|监控|告警|日志|trace|opentelemetry|prometheus|grafana|ebpf|cilium|gateway api|sigstore|slsa|sbom|云|gpu|dra/i,
+    /linux|容器|docker|oci|kubernetes|k8s|helm|argo|gitops|terraform|opentofu|crossplane|\biac\b|ansible|ci\/cd|流水线|部署|发布|运维|devops|sre|可观测|监控|告警|日志|trace|opentelemetry|prometheus|grafana|ebpf|cilium|gateway api|sigstore|slsa|sbom|sandbox|microvm|snapshot|agentenv|云|gpu|dra/i,
   "llm-algorithm":
-    /机器学习|深度学习|神经网络|transformer|attention|llm|大模型|语言模型|token|embedding|微调|训练|推理|量化|vllm|sglang|cuda|gpu|triton|kv cache|pagedattention|radixattention|flashinfer|fp8|fp4|moe|评估|precision|recall|pytorch/i,
+    /机器学习|深度学习|神经网络|transformer|attention|llm|大模型|语言模型|模型|agentic|多模态|强化学习|\brl\b|token|embedding|微调|训练|推理|inference|speculative|量化|vllm|sglang|cuda|gpu|triton|kv cache|pagedattention|radixattention|flashinfer|fp8|fp4|moe|评估|precision|recall|pytorch/i,
   "agent-evaluation":
     /agent|智能体|llm|大模型|模型|rag|检索|工具|tool|评测|评估|基准|benchmark|rubric|judge|轨迹|trace|回归|成功率|pass@|pass\^|成本|延迟|安全|鲁棒|幻觉|swe-bench|terminal-bench|osworld|tau|τ/i,
   "agent-engineering":
@@ -240,7 +254,7 @@ function yearOf(question) {
   return values.length ? Math.max(...values) : undefined;
 }
 
-function questionScore(question, prompt) {
+function questionScore(question, prompt, priorityPrompts) {
   const kinds = new Set(question.occurrences.map(item => item.sourceKind));
   let score = kinds.has("firsthand")
     ? 80
@@ -287,6 +301,23 @@ function questionScore(question, prompt) {
   if (/为什么|如何|怎样|区别|比较|取舍|边界|失败|排查|设计|实现/.test(prompt)) {
     score += 5;
   }
+  if (
+    question.trackId === "mobile" &&
+    question.topicId === "kotlin-multiplatform"
+  ) {
+    score += hasKotlinMultiplatformCoreRelevance(prompt) ? 24 : -12;
+  }
+  if (
+    question.trackId === "mobile" &&
+    new Set(["electron", "lynx", "qt", "tauri", "uni-app-x"]).has(
+      question.topicId
+    )
+  ) {
+    score += hasClientTechnologyCoreRelevance(question.topicId, prompt)
+      ? 24
+      : -12;
+  }
+  if (priorityPrompts.has(question.prompt)) score += 100;
   return score;
 }
 
@@ -298,6 +329,19 @@ async function readTranslations() {
     if (error?.code === "ENOENT") return new Map();
     throw error;
   }
+}
+
+async function readPriorityPrompts() {
+  const prompts = new Set();
+  for (const path of priorityPaths) {
+    try {
+      const value = JSON.parse(await readFile(path, "utf8"));
+      for (const item of value.items) prompts.add(item.prompt);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  return prompts;
 }
 
 async function clearCuration() {
@@ -315,7 +359,10 @@ async function clearCuration() {
 
 async function curate() {
   const curated = JSON.parse(await readFile(curatedPath, "utf8"));
-  const translationById = await readTranslations();
+  const [translationById, priorityPrompts] = await Promise.all([
+    readTranslations(),
+    readPriorityPrompts(),
+  ]);
   const selectedQuestionIdsByTrack = {};
   const reports = [];
 
@@ -335,7 +382,7 @@ async function curate() {
       candidates.push({
         question,
         prompt,
-        score: questionScore(question, prompt),
+        score: questionScore(question, prompt, priorityPrompts),
       });
     }
 
@@ -360,7 +407,7 @@ async function curate() {
       topicCounts.set(topicId, count + 1);
     }
 
-    const minimumTarget = Math.min(820, rule.limit, candidates.length);
+    const minimumTarget = Math.min(rule.limit, candidates.length);
     if (selected.length < minimumTarget) {
       for (const candidate of candidates) {
         if (selected.length >= minimumTarget) break;

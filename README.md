@@ -1,14 +1,14 @@
 # DevRusher
 
-DevRusher 是面向程序员校招与社招的本地优先面试学习工具，适合短期冲刺、长期刷题和模拟面试。
+DevRusher 是面向程序员的本地优先面试学习工具，适合短期冲刺、长期刷题和模拟面试。
 
 题库分为可完成的精选题集和可搜索的完整题库。当前收录
-**7,434 道去重题目、7,550 条可追溯出现记录**，九个方向各有 100 道精选题。不再通过模板生成题目或重复改写凑数量，准确统计以[题包清单](./public/content/manifest.json)为准。
+**8,280 道去重题目、8,517 条可追溯出现记录**，九个方向各有 100 道精选题。不再通过模板生成题目或重复改写凑数量，准确统计以[题包清单](./public/content/manifest.json)为准。
 
 ## 功能
 
 - 在精选题集与完整真题库之间切换
-- 按方向、主题、求职阶段、公司和题型筛选
+- 按方向、主题、难度和题型筛选
 - 收藏、学习状态、学习计划和间隔复习
 - 单模型解析与三模型并行解析，结果自动缓存在本地
 - 10 / 20 / 30 / 60 题练习和逐轮模拟面试
@@ -44,8 +44,9 @@ pnpm dev
 常用命令：
 
 ```bash
-pnpm check          # 格式、Lint、类型、测试和题包校验
-pnpm build          # 生产构建
+pnpm check # 格式、Lint、类型、测试和题包校验
+pnpm fix   # 自动修复格式和 Lint
+pnpm build # 生产构建
 ```
 
 Vercel 通过 `Dockerfile.vercel` 部署 Node.js 26 容器。首次连接时，在 Build and
@@ -66,10 +67,10 @@ Git 只跟踪 `public/content`
 `content` 工作区中。
 
 ```bash
-pnpm content:import        # 从已确认来源导入并语义去重
-pnpm content:translate     # 等义翻译英文题，保留技术名词和来源原文
-pnpm content:build         # 生成最终题包
-pnpm content:release-check # 执行发布校验
+pnpm content import    # 导入并语义去重
+pnpm content translate # 等义翻译英文题
+pnpm content build     # 生成最终题包
+pnpm content check     # 执行发布校验
 ```
 
 每道发布题目必须保留至少一条来源记录。模型不能扩写题干、补充条件或冒充真实面试来源。

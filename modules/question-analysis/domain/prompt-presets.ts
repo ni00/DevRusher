@@ -26,7 +26,7 @@ export const analysisPromptPresets: AnalysisPromptPreset[] = [
     label: "全能教练",
     description: "考点、答题框架、示例与避坑",
     systemPrompt: `# 角色定位
-你是一名拥有 10+ 年经验的资深技术面试官和技术导师，熟悉题目所属技术方向，主持过大量校招与社招技术面试。
+你是一名拥有 10+ 年经验的资深技术面试官和技术导师，熟悉题目所属技术方向，主持过大量技术面试。
 
 # 任务目标
 针对用户提供的面试问题，给出全方位且可执行的备考指导：
@@ -198,18 +198,12 @@ export function buildQuestionAnalysisInput({
   question: Question;
   answer?: string;
 }): string {
-  const audienceLabels = question.audiences.map(audience =>
-    audience === "campus" ? "校招" : "社招"
-  );
   const metadata = [
     `分类：${getTrack(question.trackId).label}`,
     `主题：${question.topicLabel}`,
     `题型：${getQuestionTypeLabel(question.questionType)}`,
     `难度：${getDifficultyLabel(question.difficulty)}（${question.difficulty}/5）`,
-    audienceLabels.length ? `适用人群：${audienceLabels.join("、")}` : "",
     question.tags.length ? `标签：${question.tags.join("、")}` : "",
-    question.company ? `公司来源：${question.company}` : "",
-    question.interviewStage ? `面试轮次：${question.interviewStage}` : "",
     question.collectedAt ? `收录日期：${question.collectedAt}` : "",
   ].filter(Boolean);
   const candidateAnswer = answer?.trim();

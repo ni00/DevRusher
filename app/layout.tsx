@@ -11,8 +11,7 @@ export const metadata: Metadata = {
     default: "DevRusher · 程序员面试题库",
     template: "%s · DevRusher",
   },
-  description:
-    "面向校招与社招程序员的多方向题库、专项刷题、模拟面试和本地能力画像。",
+  description: "面向程序员的多方向题库、专项刷题、模拟面试和本地能力画像。",
   applicationName: "DevRusher",
 };
 

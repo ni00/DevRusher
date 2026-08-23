@@ -352,7 +352,6 @@ export function PracticeWorkspace({
             <p className="mt-1 text-xs text-muted-foreground">
               {getQuestionTypeLabel(question.questionType)} ·{" "}
               {getDifficultyLabel(question.difficulty)}
-              {question.company ? ` · ${question.company}` : ""}
             </p>
           </div>
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

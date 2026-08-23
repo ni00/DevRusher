@@ -1,16 +1,22 @@
 {
   "schemaVersion": 2,
-  "contentVersion": "v2-785809fdff0f",
-  "generatedAt": "2026-08-22T18:35:18.266Z",
-  "totalQuestions": 7434,
+  "contentVersion": "v2-5b0c79f28a61",
+  "generatedAt": "2026-08-23T09:48:47.974Z",
+  "totalQuestions": 8280,
   "coreQuestions": 900,
-  "totalOccurrences": 7538,
+  "totalOccurrences": 8517,
+  "coreQuality": {
+    "reviewVersion": 2,
+    "reviewedQuestions": 900,
+    "minimumScore": 75,
+    "averageScore": 84.5
+  },
   "collections": [
     {
       "id": "fundamentals-library",
       "label": "计算机基础完整题库",
       "description": "有明确来源的计算机基础题目",
-      "questionCount": 820
+      "questionCount": 880
     },
     {
       "id": "fundamentals-core",
@@ -22,7 +28,7 @@
       "id": "frontend-library",
       "label": "前端完整题库",
       "description": "来自社区题库和真实面经的前端问题",
-      "questionCount": 915
+      "questionCount": 1000
     },
     {
       "id": "frontend-core",
@@ -34,7 +40,7 @@
       "id": "backend-library",
       "label": "后端完整题库",
       "description": "来自真实面经和可信仓库的后端问题",
-      "questionCount": 819
+      "questionCount": 920
     },
     {
       "id": "backend-core",
@@ -44,21 +50,21 @@
     },
     {
       "id": "mobile-library",
-      "label": "移动端完整题库",
-      "description": "有明确来源的移动端问题",
-      "questionCount": 820
+      "label": "客户端与移动端完整题库",
+      "description": "有明确来源的移动端与多端客户端问题",
+      "questionCount": 1000
     },
     {
       "id": "mobile-core",
-      "label": "移动端精选",
-      "description": "适合优先完成的移动端问题",
+      "label": "客户端与移动端精选",
+      "description": "适合优先完成的移动端与多端客户端问题",
       "questionCount": 100
     },
     {
       "id": "quality-library",
       "label": "质量与测试完整题库",
       "description": "有明确来源的质量与测试问题",
-      "questionCount": 800
+      "questionCount": 925
     },
     {
       "id": "quality-core",
@@ -70,7 +76,7 @@
       "id": "platform-library",
       "label": "平台与运维完整题库",
       "description": "有明确来源的平台与运维问题",
-      "questionCount": 820
+      "questionCount": 910
     },
     {
       "id": "platform-core",
@@ -82,7 +88,7 @@
       "id": "llm-algorithm-library",
       "label": "大模型算法完整题库",
       "description": "来自面经、官方材料和论文的问题",
-      "questionCount": 820
+      "questionCount": 915
     },
     {
       "id": "llm-algorithm-core",
@@ -94,7 +100,7 @@
       "id": "agent-evaluation-library",
       "label": "Agent 评测完整题库",
       "description": "来自面经、Benchmark 和工程材料的 Agent 评测问题",
-      "questionCount": 800
+      "questionCount": 840
     },
     {
       "id": "agent-evaluation-core",
@@ -106,7 +112,7 @@
       "id": "agent-engineering-library",
       "label": "Agent 工程完整题库",
       "description": "来自面经、官方文档和工程材料的 Agent 工程问题",
-      "questionCount": 820
+      "questionCount": 890
     },
     {
       "id": "agent-engineering-core",
@@ -118,120 +124,120 @@
   "tracks": [
     {
       "id": "fundamentals",
-      "count": 820,
+      "count": 880,
       "coreCount": 100,
-      "occurrenceCount": 825,
+      "occurrenceCount": 885,
       "topicCount": 7,
       "questionsInCollections": {
-        "fundamentals-library": 820,
+        "fundamentals-library": 880,
         "fundamentals-core": 100
       },
-      "checksum": "653fa17b6f3ecd74588d6ebeab628b8ed105c0f9a4a07512ff6b4d652e4b6111",
-      "file": "/content/packs/v2-785809fdff0f/fundamentals.json"
+      "checksum": "d577785283184ff56dcc3e9ac01c8f662b19725b30fb677387550e9ebf737da3",
+      "file": "/content/packs/v2-5b0c79f28a61/fundamentals.json"
     },
     {
       "id": "frontend",
-      "count": 915,
+      "count": 1000,
       "coreCount": 100,
-      "occurrenceCount": 942,
+      "occurrenceCount": 1025,
       "topicCount": 10,
       "questionsInCollections": {
-        "frontend-library": 915,
+        "frontend-library": 1000,
         "frontend-core": 100
       },
-      "checksum": "75d6de373d47d7ffaf9820226a791503883a806ebc8a36e6ecc7e360be0f93b5",
-      "file": "/content/packs/v2-785809fdff0f/frontend.json"
+      "checksum": "416a9354177e2d54b07b02077ad737d523c71c1c30651290932c18fd98db8cd4",
+      "file": "/content/packs/v2-5b0c79f28a61/frontend.json"
     },
     {
       "id": "backend",
-      "count": 819,
+      "count": 920,
       "coreCount": 100,
-      "occurrenceCount": 823,
+      "occurrenceCount": 941,
       "topicCount": 8,
       "questionsInCollections": {
-        "backend-library": 819,
+        "backend-library": 920,
         "backend-core": 100
       },
-      "checksum": "7e2bb7b541e1f14c29b8c2f67ae3623a860fe55a3c9750a2f2baa0230aab72d5",
-      "file": "/content/packs/v2-785809fdff0f/backend.json"
+      "checksum": "25ef94f4724a527f5ee9d7d425a02ccbfa36eb15feecefe6e713384ba5c6c882",
+      "file": "/content/packs/v2-5b0c79f28a61/backend.json"
     },
     {
       "id": "mobile",
-      "count": 820,
+      "count": 1000,
       "coreCount": 100,
-      "occurrenceCount": 824,
-      "topicCount": 7,
+      "occurrenceCount": 1011,
+      "topicCount": 12,
       "questionsInCollections": {
-        "mobile-library": 820,
+        "mobile-library": 1000,
         "mobile-core": 100
       },
-      "checksum": "82a5327b80c4ca766c77b7007f42ad985e4b69f933cd4f454de457e933a6aa32",
-      "file": "/content/packs/v2-785809fdff0f/mobile.json"
+      "checksum": "58bea0e64e607ec058432da0b4971fcb702dfe64584c17689d1e8aaec450f6b5",
+      "file": "/content/packs/v2-5b0c79f28a61/mobile.json"
     },
     {
       "id": "quality",
-      "count": 800,
+      "count": 925,
       "coreCount": 100,
-      "occurrenceCount": 816,
+      "occurrenceCount": 1051,
       "topicCount": 7,
       "questionsInCollections": {
-        "quality-library": 800,
+        "quality-library": 925,
         "quality-core": 100
       },
-      "checksum": "303a7eb0fe16f1c9aaec58ba3fb58570446e4eaea46497da89d78b1ddf0229c2",
-      "file": "/content/packs/v2-785809fdff0f/quality.json"
+      "checksum": "f64a6926b6126b40eb8a05e8d1a8a625a9f809fa2bbc8b5dfc1ceff7ac3a9221",
+      "file": "/content/packs/v2-5b0c79f28a61/quality.json"
     },
     {
       "id": "platform",
-      "count": 820,
+      "count": 910,
       "coreCount": 100,
-      "occurrenceCount": 823,
+      "occurrenceCount": 913,
       "topicCount": 6,
       "questionsInCollections": {
-        "platform-library": 820,
+        "platform-library": 910,
         "platform-core": 100
       },
-      "checksum": "f8d083ae8c79008732cce6c1279b7930f3b876b24987ceec3880f0fa7c9ab95d",
-      "file": "/content/packs/v2-785809fdff0f/platform.json"
+      "checksum": "ff12dae2d4c3a1848b24da477dd35b07560ee3c85dbeadf4df31f3062cd78e68",
+      "file": "/content/packs/v2-5b0c79f28a61/platform.json"
     },
     {
       "id": "llm-algorithm",
-      "count": 820,
+      "count": 915,
       "coreCount": 100,
-      "occurrenceCount": 823,
+      "occurrenceCount": 918,
       "topicCount": 6,
       "questionsInCollections": {
-        "llm-algorithm-library": 820,
+        "llm-algorithm-library": 915,
         "llm-algorithm-core": 100
       },
-      "checksum": "432f466a53938c00bb2721d4226e8a69010c9d7eba8393a7150aef03a2edd697",
-      "file": "/content/packs/v2-785809fdff0f/llm-algorithm.json"
+      "checksum": "cecb6618e2a846a1c34e8a88a48dbd6214a502be4cdbb34daf52d5d04c3f54bd",
+      "file": "/content/packs/v2-5b0c79f28a61/llm-algorithm.json"
     },
     {
       "id": "agent-evaluation",
-      "count": 800,
+      "count": 840,
       "coreCount": 100,
-      "occurrenceCount": 811,
+      "occurrenceCount": 851,
       "topicCount": 10,
       "questionsInCollections": {
-        "agent-evaluation-library": 800,
+        "agent-evaluation-library": 840,
         "agent-evaluation-core": 100
       },
-      "checksum": "7683041b402b91a22d3353a05522c07c3ef507c3710c9a5811176c0dec413bdb",
-      "file": "/content/packs/v2-785809fdff0f/agent-evaluation.json"
+      "checksum": "a032ad6a44b56513aa0a54b2520021fa5981c9128f7d4f9231731eef3be0163a",
+      "file": "/content/packs/v2-5b0c79f28a61/agent-evaluation.json"
     },
     {
       "id": "agent-engineering",
-      "count": 820,
+      "count": 890,
       "coreCount": 100,
-      "occurrenceCount": 851,
+      "occurrenceCount": 922,
       "topicCount": 9,
       "questionsInCollections": {
-        "agent-engineering-library": 820,
+        "agent-engineering-library": 890,
         "agent-engineering-core": 100
       },
-      "checksum": "291902c1cef617dba6d1c7c388b3f9874b7f17bad750ff5db68208e32ec97355",
-      "file": "/content/packs/v2-785809fdff0f/agent-engineering.json"
+      "checksum": "816f36c28395435c7addec3f6a6b96fc332e6e1ec633f99509c09a2069fcda80",
+      "file": "/content/packs/v2-5b0c79f28a61/agent-engineering.json"
     }
   ]
 }

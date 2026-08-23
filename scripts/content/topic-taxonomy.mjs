@@ -193,12 +193,15 @@ export const topicTaxonomy = {
       "advanced-react-native-architecture",
       "react-native",
     ]),
-    define("cross-platform", "小程序与跨端", ["cross-platform"]),
-    define("modern-cross-platform", "现代跨端框架", [
+    define("kotlin-multiplatform", "Kotlin Multiplatform（KMP）", [
       "advanced-kotlin-multiplatform",
-      "advanced-lynx",
-      "advanced-uni-app",
     ]),
+    define("lynx", "Lynx", ["advanced-lynx"]),
+    define("uni-app-x", "uni-app 与 uni-app x", ["advanced-uni-app"]),
+    define("electron", "Electron", ["advanced-electron"]),
+    define("tauri", "Tauri", ["advanced-tauri"]),
+    define("qt", "Qt 与 QML", ["advanced-qt"]),
+    define("cross-platform", "小程序与跨端", ["cross-platform"]),
     define("mobile-data-network", "移动数据、存储与网络", [
       "advanced-mobile-networking",
       "advanced-mobile-offline-first",

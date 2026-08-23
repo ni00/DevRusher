@@ -3,10 +3,13 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  getCoreSpecificityRisk,
   getPromptCompletenessRisk,
   getPromptContextRisk,
   getPromptPremiseRisk,
   getPromptScienceRisk,
+  hasClientTechnologyCoreRelevance,
+  hasKotlinMultiplatformCoreRelevance,
   isKnownGeneratedTemplate,
 } from "./source-quality.mjs";
 
@@ -21,8 +24,12 @@ const collections = [
   ["frontend-core", "前端精选", "从完整题库中选出的前端核心问题"],
   ["backend-library", "后端完整题库", "来自真实面经和可信仓库的后端问题"],
   ["backend-core", "后端精选", "适合优先完成的后端问题"],
-  ["mobile-library", "移动端完整题库", "有明确来源的移动端问题"],
-  ["mobile-core", "移动端精选", "适合优先完成的移动端问题"],
+  [
+    "mobile-library",
+    "客户端与移动端完整题库",
+    "有明确来源的移动端与多端客户端问题",
+  ],
+  ["mobile-core", "客户端与移动端精选", "适合优先完成的移动端与多端客户端问题"],
   ["quality-library", "质量与测试完整题库", "有明确来源的质量与测试问题"],
   ["quality-core", "质量与测试精选", "适合优先完成的质量与测试问题"],
   ["platform-library", "平台与运维完整题库", "有明确来源的平台与运维问题"],
@@ -317,8 +324,19 @@ function topicForSource(trackId, category, prompt) {
   }
 
   if (trackId === "mobile") {
-    if (/kotlin.?multiplatform|\bkmp\b|lynx|uni-?app/.test(value)) {
+    if (
+      /kotlin.?multiplatform|\bkmp\b|\bkmm\b|compose.?multiplatform/.test(value)
+    ) {
       return ["modern-cross-platform", "现代跨端框架"];
+    }
+    if (/electron/.test(value)) return ["electron", "Electron"];
+    if (/tauri/.test(value)) return ["tauri", "Tauri"];
+    if (/(?:^|\W)qt(?:\W|$)|qml|qt quick/.test(value)) {
+      return ["qt", "Qt 与 QML"];
+    }
+    if (/lynx|reactlynx|rspeedy/.test(value)) return ["lynx", "Lynx"];
+    if (/uni-?app(?:\s*x)?|uniapp(?:\s*x)?|\buts\b|uvue/.test(value)) {
+      return ["uni-app-x", "uni-app 与 uni-app x"];
     }
     if (/harmony|arkts|arkui/.test(value)) return ["harmonyos", "HarmonyOS"];
     if (/android|kotlin/.test(value)) return ["android", "Android"];
@@ -453,7 +471,6 @@ function createRawQuestion({
   prompt,
   trackId,
   category,
-  audiences = ["campus", "experienced"],
   collectionIds,
   occurrence,
 }) {
@@ -471,7 +488,6 @@ function createRawQuestion({
     prompt: normalizedPrompt,
     questionType,
     difficulty: inferDifficulty(normalizedPrompt, questionType),
-    audiences,
     tags: [category].filter(Boolean),
     collectionIds,
     occurrence: {
@@ -1029,12 +1045,6 @@ async function importFebobo() {
   return results;
 }
 
-function companyFromTitle(title) {
-  return ["阿里", "百度", "快手", "美团", "招商银行"].find(company =>
-    title.includes(company)
-  );
-}
-
 async function importCsJobGuide() {
   const base = join(inbox, "cs-job-guide");
   const interviewDirectory = join(base, "docs/面经");
@@ -1049,17 +1059,11 @@ async function importCsJobGuide() {
       ? content.split("<!-- /TOC -->")[1]
       : content;
     const title = /^#\s+(.+)$/m.exec(content)?.[1] ?? relative(base, path);
-    const company = companyFromTitle(title);
     const relativePath = relative(base, path).split(sep).join("/");
     const sourceUrl = `https://github.com/wuyoueeee/CS-Job-Guide/blob/master/${encodeURI(relativePath)}`;
-    let interviewStage;
     let category = "Java";
 
     for (const [index, line] of body.split(/\r?\n/).entries()) {
-      const stageHeading = /^##\s+(.+(?:一面|二面|三面|技术面|HR面).*)$/i.exec(
-        line
-      );
-      if (stageHeading) interviewStage = stageHeading[1].trim();
       const categoryHeading = /^###\s+(.+)$/.exec(line);
       if (categoryHeading) category = categoryHeading[1].trim();
       if (/反问/.test(category)) continue;
@@ -1076,7 +1080,6 @@ async function importCsJobGuide() {
           prompt: question,
           trackId,
           category,
-          audiences: ["campus"],
           collectionIds: [`${trackId}-library`, `${trackId}-core`],
           occurrence: {
             id: `github-cs-job-guide-${sha256(`${relativePath}:${index}`).slice(0, 16)}`,
@@ -1084,8 +1087,6 @@ async function importCsJobGuide() {
             sourceKind: "firsthand",
             sourceTitle: title,
             sourceUrl,
-            company,
-            interviewStage,
           },
         })
       );
@@ -1121,7 +1122,6 @@ async function importLlmInterview() {
         prompt,
         trackId,
         category,
-        audiences: ["experienced"],
         collectionIds: [`${trackId}-library`, `${trackId}-core`],
         occurrence: {
           id: `github-llm-interview-${index}`,
@@ -1148,6 +1148,10 @@ async function importJsonInbox() {
     "selenium-questions.json",
     "technical-community.json",
     "latest-trends.json",
+    "client-framework-official.json",
+    "2026-official-stack-expansion.json",
+    "official-ai-labs-2026.json",
+    "emerging-agent-projects.json",
     "reviewed-technical-community.json",
     "official-source-questions-reviewed.json",
   ]) {
@@ -1168,7 +1172,6 @@ async function importJsonInbox() {
           prompt: item.prompt,
           trackId: item.trackId,
           category: item.category,
-          audiences: item.audiences,
           collectionIds: [
             `${item.trackId}-library`,
             ...(includeInCore ? [`${item.trackId}-core`] : []),
@@ -1180,8 +1183,6 @@ async function importJsonInbox() {
             sourceTitle: item.sourceTitle,
             sourceUrl: item.sourceUrl,
             publishedAt: item.publishedAt,
-            company: item.company,
-            interviewStage: item.interviewStage,
             originalPrompt: item.originalPrompt,
           },
         })
@@ -1206,6 +1207,28 @@ async function readManualCuration() {
     return value.selectedQuestionIdsByTrack;
   } catch (error) {
     if (error?.code === "ENOENT") return {};
+    throw error;
+  }
+}
+
+async function readCoreQualityReviews() {
+  try {
+    const value = JSON.parse(
+      await readFile(
+        join(root, "content/work/core-quality-reviews.json"),
+        "utf8"
+      )
+    );
+    if (value.schemaVersion !== 1 || !Array.isArray(value.items)) {
+      throw new Error("Invalid core quality reviews");
+    }
+    return new Map(
+      value.items
+        .filter(item => item.reviewVersion === 2)
+        .map(item => [item.id, item])
+    );
+  } catch (error) {
+    if (error?.code === "ENOENT") return new Map();
     throw error;
   }
 }
@@ -1255,9 +1278,6 @@ function mergeQuestions(rawQuestions) {
         0,
         12
       );
-      duplicate.audiences = [
-        ...new Set([...duplicate.audiences, ...raw.audiences]),
-      ];
       continue;
     }
 
@@ -1270,7 +1290,6 @@ function mergeQuestions(rawQuestions) {
       prompt: raw.prompt,
       questionType: raw.questionType,
       difficulty: raw.difficulty,
-      audiences: raw.audiences,
       tags: raw.tags,
       collectionIds: raw.collectionIds,
       occurrences: [raw.occurrence],
@@ -1282,30 +1301,126 @@ function mergeQuestions(rawQuestions) {
   }
 
   return merged.map(({ semantic: _semantic, ...question }) => {
-    const companies = [
-      ...new Set(
-        question.occurrences.map(item => item.company).filter(Boolean)
-      ),
-    ];
-    const stages = [
-      ...new Set(
-        question.occurrences.map(item => item.interviewStage).filter(Boolean)
-      ),
-    ];
+    const isKotlinMultiplatform =
+      question.trackId === "mobile" &&
+      /kotlin.?multiplatform|\bkmp\b|\bkmm\b|compose.?multiplatform|expect.{0,8}actual|kotlin\/native|cinterop/i.test(
+        `${question.prompt} ${question.tags.join(" ")}`
+      );
     const dates = question.occurrences
       .map(item => item.publishedAt)
       .filter(Boolean)
       .sort();
     return {
       ...question,
-      ...(companies.length === 1 ? { company: companies[0] } : {}),
-      ...(stages.length === 1 ? { interviewStage: stages[0] } : {}),
+      ...(isKotlinMultiplatform
+        ? {
+            topicId: "kotlin-multiplatform",
+            topicLabel: "Kotlin Multiplatform（KMP）",
+          }
+        : {}),
       ...(dates.length ? { collectedAt: dates.at(-1) } : {}),
     };
   });
 }
 
-function assignCoreCollections(questions) {
+const coreTopicTargets = {
+  fundamentals: {
+    algorithms: 18,
+    "software-design": 15,
+    networking: 15,
+    databases: 14,
+    "computer-systems": 15,
+    "distributed-systems": 13,
+    "engineering-practice": 10,
+  },
+  frontend: {
+    "javascript-typescript": 14,
+    "web-platform": 12,
+    browser: 10,
+    react: 15,
+    vue: 8,
+    "frontend-engineering": 12,
+    "frontend-performance": 10,
+    "frontend-security": 8,
+    "frontend-architecture": 4,
+    "other-frameworks": 7,
+  },
+  backend: {
+    java: 10,
+    nodejs: 10,
+    go: 8,
+    cache: 10,
+    messaging: 10,
+    "relational-databases": 15,
+    "distributed-systems": 15,
+    "backend-system-design": 22,
+  },
+  mobile: {
+    android: 14,
+    ios: 14,
+    "kotlin-multiplatform": 15,
+    "cross-platform": 5,
+    lynx: 7,
+    "uni-app-x": 7,
+    electron: 5,
+    tauri: 4,
+    qt: 4,
+    flutter: 10,
+    harmonyos: 5,
+    "react-native": 10,
+  },
+  quality: {
+    "test-automation": 14,
+    "test-strategy": 15,
+    "unit-testing": 12,
+    "advanced-testing": 15,
+    "integration-contract": 14,
+    "performance-testing": 14,
+    "security-testing": 16,
+  },
+  platform: {
+    observability: 18,
+    containers: 10,
+    kubernetes: 20,
+    "delivery-iac": 14,
+    "linux-automation": 14,
+    "sre-reliability": 24,
+  },
+  "llm-algorithm": {
+    "inference-serving": 22,
+    "gpu-kernels": 18,
+    "model-architecture": 18,
+    "post-training": 16,
+    "ml-foundations": 12,
+    "model-evaluation": 14,
+  },
+  "agent-evaluation": {
+    "evaluation-design": 13,
+    "coding-tool-evaluation": 12,
+    "search-browser-rag": 8,
+    "datasets-benchmarks": 10,
+    "online-regression": 10,
+    "safety-robustness": 12,
+    "trajectory-evaluation": 10,
+    "efficiency-evaluation": 7,
+    "evaluation-platform": 8,
+    "judge-human": 10,
+  },
+  "agent-engineering": {
+    "agent-foundations": 15,
+    "tool-engineering": 14,
+    "multi-agent": 11,
+    "agent-frameworks": 9,
+    rag: 9,
+    "context-engineering": 11,
+    "memory-state": 11,
+    "agent-production": 12,
+    "agent-safety": 8,
+  },
+};
+
+function assignCoreCollections(questions, coreReviews) {
+  const getMinimumCoreScore = () => 75;
   const trackIds = [
     "fundamentals",
     "frontend",
@@ -1332,10 +1447,96 @@ function assignCoreCollections(questions) {
     return 3;
   };
 
+  const typeCaps = {
+    concept: 45,
+    comparison: 15,
+    coding: 15,
+    practical: 8,
+    scenario: 20,
+    "system-design": 18,
+    debugging: 14,
+    testing: 14,
+    operations: 12,
+    behavioral: 5,
+  };
+  const difficultyCaps = { 1: 10, 2: 45, 3: 38, 4: 16, 5: 6 };
+
+  function deterministicCoreScore(question) {
+    const typeScores = {
+      concept: 8,
+      comparison: 14,
+      coding: 12,
+      practical: 12,
+      scenario: 18,
+      "system-design": 22,
+      debugging: 13,
+      testing: 14,
+      operations: 15,
+      behavioral: 3,
+    };
+    const difficultyScores = { 1: 2, 2: 8, 3: 14, 4: 12, 5: 9 };
+    let score = 42 - sourcePriority(question) * 5;
+    score += typeScores[question.questionType] ?? 0;
+    score += difficultyScores[question.difficulty] ?? 0;
+    score += Math.min(10, (question.occurrences.length - 1) * 4);
+    if (question.prompt.length >= 24 && question.prompt.length <= 180) {
+      score += 7;
+    }
+    if (
+      /为什么|如何|机制|原理|取舍|边界|失败|设计|排查|验证|比较/.test(
+        question.prompt
+      )
+    ) {
+      score += 10;
+    }
+    if (
+      /默认值|哪个参数|哪个文件|Content-Type|HTTP 端点|CLI|安装命令/i.test(
+        question.prompt
+      )
+    ) {
+      score -= 22;
+    }
+    if (/^(?:什么是|有哪些).{0,18}[？?]$/.test(question.prompt)) score -= 8;
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function getCoreScore(question) {
+    const review = coreReviews.get(question.id);
+    let score =
+      review?.sourcePrompt === question.prompt
+        ? review.score
+        : deterministicCoreScore(question);
+    if (getCoreSpecificityRisk(question.prompt)) {
+      score = Math.min(score, 55);
+    }
+    if (
+      question.trackId === "mobile" &&
+      question.topicId === "kotlin-multiplatform" &&
+      !hasKotlinMultiplatformCoreRelevance(question.prompt)
+    ) {
+      score = Math.min(score, 55);
+    }
+    if (
+      question.trackId === "mobile" &&
+      new Set(["electron", "lynx", "qt", "tauri", "uni-app-x"]).has(
+        question.topicId
+      ) &&
+      !hasClientTechnologyCoreRelevance(question.topicId, question.prompt)
+    ) {
+      score = Math.min(score, 55);
+    }
+    const minimumCoreScore = getMinimumCoreScore(question);
+    return coreReviews.size > 0
+      ? review?.sourcePrompt === question.prompt
+        ? score
+        : Math.min(minimumCoreScore - 1, score)
+      : score;
+  }
+
   function sortCoreCandidates(items) {
     return [...items].sort((left, right) => {
-      const priority = sourcePriority(left) - sourcePriority(right);
-      if (priority !== 0) return priority;
+      const scoreDifference = getCoreScore(right) - getCoreScore(left);
+      if (scoreDifference !== 0) return scoreDifference;
       const occurrenceDifference =
         right.occurrences.length - left.occurrences.length;
       if (occurrenceDifference !== 0) return occurrenceDifference;
@@ -1347,23 +1548,55 @@ function assignCoreCollections(questions) {
     });
   }
 
-  function takeByTopic(items, target, selected) {
-    const byTopic = new Map();
-    for (const question of sortCoreCandidates(items)) {
-      if (selected.has(question.id)) continue;
-      const queue = byTopic.get(question.topicId) ?? [];
-      queue.push(question);
-      byTopic.set(question.topicId, queue);
-    }
-    const queues = [...byTopic.values()];
-    let queueIndex = 0;
+  function takeCandidates(
+    items,
+    target,
+    selected,
+    typeCounts,
+    difficultyCounts,
+    enforceCaps,
+    minimumScore,
+    topicCounts,
+    topicCaps
+  ) {
     let added = 0;
-    while (added < target && queues.some(queue => queue.length > 0)) {
-      const queue = queues[queueIndex % queues.length];
-      queueIndex += 1;
-      const question = queue.shift();
-      if (!question || selected.has(question.id)) continue;
+    for (const question of sortCoreCandidates(items)) {
+      if (added >= target) break;
+      if (selected.has(question.id)) continue;
+      const requiredScore =
+        typeof minimumScore === "function"
+          ? minimumScore(question)
+          : minimumScore;
+      if (getCoreScore(question) < requiredScore) continue;
+      if (
+        topicCaps &&
+        (topicCounts.get(question.topicId) ?? 0) >=
+          (topicCaps[question.topicId] ?? Number.POSITIVE_INFINITY)
+      ) {
+        continue;
+      }
+      if (
+        enforceCaps &&
+        ((typeCounts.get(question.questionType) ?? 0) >=
+          typeCaps[question.questionType] ||
+          (difficultyCounts.get(question.difficulty) ?? 0) >=
+            difficultyCaps[question.difficulty])
+      ) {
+        continue;
+      }
       selected.add(question.id);
+      typeCounts.set(
+        question.questionType,
+        (typeCounts.get(question.questionType) ?? 0) + 1
+      );
+      difficultyCounts.set(
+        question.difficulty,
+        (difficultyCounts.get(question.difficulty) ?? 0) + 1
+      );
+      topicCounts.set(
+        question.topicId,
+        (topicCounts.get(question.topicId) ?? 0) + 1
+      );
       added += 1;
     }
     return added;
@@ -1381,25 +1614,97 @@ function assignCoreCollections(questions) {
       );
     }
     const selected = new Set();
-    const difficultyTargets = new Map([
-      [1, 20],
-      [2, 35],
-      [3, 30],
-      [4, 12],
-      [5, 3],
-    ]);
-    for (const [difficulty, difficultyTarget] of difficultyTargets) {
-      takeByTopic(
-        trackQuestions.filter(question => question.difficulty === difficulty),
-        difficultyTarget,
-        selected
+    const typeCounts = new Map();
+    const difficultyCounts = new Map();
+    const topicCounts = new Map();
+    const topicTargets = coreTopicTargets[trackId];
+    const topicCaps = Object.fromEntries(
+      Object.entries(topicTargets).map(([topicId, topicTarget]) => [
+        topicId,
+        Math.max(topicTarget + 5, Math.ceil(topicTarget * 1.5)),
+      ])
+    );
+    for (const [topicId, topicTarget] of Object.entries(topicTargets)) {
+      const topicQuestions = trackQuestions.filter(
+        question => question.topicId === topicId
+      );
+      const withCaps = takeCandidates(
+        topicQuestions,
+        topicTarget,
+        selected,
+        typeCounts,
+        difficultyCounts,
+        true,
+        getMinimumCoreScore,
+        topicCounts
+      );
+      if (withCaps < topicTarget) {
+        takeCandidates(
+          topicQuestions,
+          topicTarget - withCaps,
+          selected,
+          typeCounts,
+          difficultyCounts,
+          false,
+          getMinimumCoreScore,
+          topicCounts
+        );
+      }
+    }
+    if (selected.size < Math.min(target, trackQuestions.length)) {
+      const remaining = Math.min(target, trackQuestions.length) - selected.size;
+      const withCaps = takeCandidates(
+        trackQuestions,
+        remaining,
+        selected,
+        typeCounts,
+        difficultyCounts,
+        true,
+        getMinimumCoreScore,
+        topicCounts,
+        topicCaps
+      );
+      if (withCaps < remaining) {
+        takeCandidates(
+          trackQuestions,
+          remaining - withCaps,
+          selected,
+          typeCounts,
+          difficultyCounts,
+          false,
+          getMinimumCoreScore,
+          topicCounts,
+          topicCaps
+        );
+      }
+    }
+    if (selected.size < Math.min(target, trackQuestions.length)) {
+      if (coreReviews.size > 0) {
+        throw new Error(
+          `${trackId}: only ${selected.size} questions passed the core quality floor`
+        );
+      }
+      takeCandidates(
+        trackQuestions,
+        Math.min(target, trackQuestions.length) - selected.size,
+        selected,
+        typeCounts,
+        difficultyCounts,
+        false,
+        getMinimumCoreScore,
+        topicCounts
       );
     }
     if (selected.size < Math.min(target, trackQuestions.length)) {
-      takeByTopic(
+      takeCandidates(
         trackQuestions,
         Math.min(target, trackQuestions.length) - selected.size,
-        selected
+        selected,
+        typeCounts,
+        difficultyCounts,
+        false,
+        0,
+        topicCounts
       );
     }
     for (const question of trackQuestions) {
@@ -1439,8 +1744,10 @@ const acceptedQuestions = rawQuestions.filter(raw =>
   isPublishableSourceQuestion(raw)
 );
 const manualCuration = await readManualCuration();
+const coreQualityReviews = await readCoreQualityReviews();
 const questions = assignCoreCollections(
-  applyManualCuration(mergeQuestions(acceptedQuestions), manualCuration)
+  applyManualCuration(mergeQuestions(acceptedQuestions), manualCuration),
+  coreQualityReviews
 );
 const publishedOccurrences = questions.reduce(
   (sum, question) => sum + question.occurrences.length,

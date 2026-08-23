@@ -61,6 +61,9 @@ export function getPromptPremiseRisk(prompt) {
   if (/\/\/\s*\.\.\.(?:具体数据|省略)/.test(prompt)) {
     return "incomplete-fixture";
   }
+  if (/奇数如何解决脑裂/.test(prompt)) {
+    return "mistranslated-quorum-question";
+  }
   if (
     /(?:为什么|请证明|请解释).{0,80}(?:一定|必然|永远|完全不会|绝不会)/.test(
       prompt
@@ -93,6 +96,9 @@ export function getPromptContextRisk(prompt) {
 
 export function getPromptCompletenessRisk(prompt) {
   const value = String(prompt).trim();
+  if (/^追问\s*\d+\s*[:：]/.test(value)) {
+    return "detached-follow-up-question";
+  }
   if (
     /^[✅☑️⚠️⭐🔹🔸💡📌🎯🚀]/u.test(value) ||
     /^L\d+（[^）]+）[-—]/i.test(value)
@@ -144,6 +150,37 @@ export function getPromptCompletenessRisk(prompt) {
     return "dangling-source-fragment";
   }
   return undefined;
+}
+
+export function getCoreSpecificityRisk(prompt) {
+  if (
+    /\bfixture\b|不透明.{0,20}token|控制面冒烟|\b[A-Z][A-Z0-9]*_[A-Z0-9_]{3,}\b|`?--[a-z][\w-]+|\bresults\.json\b|(?:活动|Trace)\s*[ST]\d\b|\bcheck-in\b|信息披露策略|Skill 安全为什么是一个被低估的问题|KMM 项目报错.{0,30}Expected class has no actual declaration/i.test(
+      String(prompt)
+    )
+  ) {
+    return "core-over-specific-implementation";
+  }
+  return undefined;
+}
+
+export function hasKotlinMultiplatformCoreRelevance(prompt) {
+  return /kotlin.?multiplatform|\bkmp\b|\bkmm\b|compose.?multiplatform|kotlin\/native|\bcommonMain\b|\bcommonTest\b|\b(?:ios|apple|android|jvm|native)Main\b|source set|源集|\bexpect\b|\bactual\b|\bcinterop\b|Kotlin.{0,40}Swift|Swift.{0,40}Kotlin|sharedLogic|shared module|shared 模块|共享逻辑|共享模块|common code|平台特定.{0,20}(?:API|实现|代码)|多平台/i.test(
+    String(prompt)
+  );
+}
+
+export function hasClientTechnologyCoreRelevance(topicId, prompt) {
+  const value = String(prompt);
+  const patterns = {
+    electron:
+      /electron|main process|renderer process|preload|contextIsolation|ipcMain|ipcRenderer|BrowserWindow|webContents|utilityProcess|asar/i,
+    lynx: /lynx|reactlynx|rspeedy|primjs|lynx engine|background thread/i,
+    qt: /(?:^|\W)qt(?:\W|$)|qml|qt quick|QObject|signal.{0,8}slot|信号.{0,8}槽|moc|qpa/i,
+    tauri:
+      /tauri|src-tauri|Rust command|system webview|invoke\(|capabilit|permission|sidecar|\bwry\b|\btao\b/i,
+    "uni-app-x": /uni-?app(?:\s*x)?|uniapp(?:\s*x)?|\buts\b|uvue|原生渲染引擎/i,
+  };
+  return patterns[topicId]?.test(value) ?? false;
 }
 
 export function getPromptSkeleton(prompt) {

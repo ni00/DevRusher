@@ -21,7 +21,6 @@ const questionSchema = z.object({
     z.literal(4),
     z.literal(5),
   ]),
-  audiences: z.array(z.enum(["campus", "experienced"])).min(1),
   tags: z.array(z.string()),
   collectionIds: z.array(z.string().min(1)),
   occurrences: z
@@ -34,13 +33,9 @@ const questionSchema = z.object({
         sourceUrl: z.string().url(),
         originalPrompt: z.string().min(2),
         publishedAt: z.string().optional(),
-        company: z.string().optional(),
-        interviewStage: z.string().optional(),
       })
     )
     .min(1),
-  interviewStage: z.string().optional(),
-  company: z.string().optional(),
   collectedAt: z.string().optional(),
 });
 

@@ -11,7 +11,6 @@ export const trackIds = [
 ] as const;
 
 export type TrackId = (typeof trackIds)[number];
-export type Audience = "campus" | "experienced";
 export const difficultyLevels = [1, 2, 3, 4, 5] as const;
 export type Difficulty = (typeof difficultyLevels)[number];
 export const questionTypes = [
@@ -47,8 +46,6 @@ export interface QuestionOccurrence {
   sourceUrl: string;
   originalPrompt: string;
   publishedAt?: string;
-  company?: string;
-  interviewStage?: string;
 }
 
 export interface Question {
@@ -59,12 +56,9 @@ export interface Question {
   prompt: string;
   questionType: QuestionType;
   difficulty: Difficulty;
-  audiences: Audience[];
   tags: string[];
   collectionIds: string[];
   occurrences: QuestionOccurrence[];
-  interviewStage?: string;
-  company?: string;
   collectedAt?: string;
 }
 
@@ -72,17 +66,6 @@ export function isCoreQuestion(question: Question): boolean {
   return question.collectionIds.some(collectionId =>
     collectionId.endsWith("-core")
   );
-}
-
-export function getQuestionCompanies(question: Question): string[] {
-  return [
-    ...new Set(
-      [
-        question.company,
-        ...question.occurrences.map(occurrence => occurrence.company),
-      ].filter((value): value is string => Boolean(value))
-    ),
-  ];
 }
 
 export interface TrackDefinition {
@@ -117,10 +100,15 @@ export const trackDefinitions: TrackDefinition[] = [
   },
   {
     id: "mobile",
-    label: "移动端工程",
-    shortLabel: "移动端",
-    description: "Android、iOS、HarmonyOS 与跨端工程",
-    topics: ["Android", "iOS", "HarmonyOS", "Flutter", "跨端"],
+    label: "客户端与移动端工程",
+    shortLabel: "客户端",
+    description: "移动端、KMP、现代跨端与桌面客户端工程",
+    topics: [
+      "Android / iOS",
+      "KMP",
+      "Lynx / uni-app x",
+      "Electron / Tauri / Qt",
+    ],
   },
   {
     id: "quality",

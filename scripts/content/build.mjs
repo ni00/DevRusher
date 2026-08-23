@@ -38,7 +38,6 @@ const questionTypes = new Set([
   "operations",
   "behavioral",
 ]);
-const audienceValues = new Set(["campus", "experienced"]);
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -68,8 +67,25 @@ async function readOptionalTranslations() {
   }
 }
 
+async function readOptionalCoreReviews() {
+  try {
+    const value = await readJson(
+      join(root, "content/work/core-quality-reviews.json")
+    );
+    if (value.schemaVersion !== 1 || !Array.isArray(value.items)) {
+      throw new Error("Invalid core quality review workspace");
+    }
+    return value.items.filter(item => item.reviewVersion === 2);
+  } catch (error) {
+    if (error?.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
 function validateOccurrence(occurrence) {
   if (!occurrence?.id || !occurrence.sourceId) return "invalid-occurrence-id";
+  if ("company" in occurrence) return "removed-company-field";
+  if ("interviewStage" in occurrence) return "removed-interview-stage-field";
   if (!sourceKinds.has(occurrence.sourceKind)) return "invalid-source-kind";
   if (!occurrence.sourceTitle?.trim()) return "missing-source-title";
   if (!occurrence.originalPrompt?.trim()) return "missing-original-prompt";
@@ -85,6 +101,13 @@ function validateOccurrence(occurrence) {
 }
 
 function validateQuestion(question) {
+  if (
+    "audiences" in question ||
+    "company" in question ||
+    "interviewStage" in question
+  ) {
+    return "removed-classification-field";
+  }
   if (!question?.id || !question.id.startsWith("real:")) {
     return "invalid-real-id";
   }
@@ -102,13 +125,6 @@ function validateQuestion(question) {
     question.difficulty > 5
   ) {
     return "invalid-difficulty";
-  }
-  if (
-    !Array.isArray(question.audiences) ||
-    !question.audiences.length ||
-    question.audiences.some(value => !audienceValues.has(value))
-  ) {
-    return "invalid-audiences";
   }
   if (!Array.isArray(question.tags) || question.tags.length > 12) {
     return "invalid-tags";
@@ -239,6 +255,16 @@ async function verifyPublishedContent() {
   if (manifest.totalOccurrences !== totalOccurrences) {
     throw new Error("Manifest occurrence total mismatch");
   }
+  if (
+    manifest.coreQuality &&
+    (manifest.coreQuality.reviewVersion !== 2 ||
+      manifest.coreQuality.reviewedQuestions !== coreQuestions ||
+      manifest.coreQuality.minimumScore < 75 ||
+      manifest.coreQuality.averageScore < manifest.coreQuality.minimumScore ||
+      manifest.coreQuality.averageScore > 100)
+  ) {
+    throw new Error("Invalid core quality attestation");
+  }
   for (const collection of manifest.collections) {
     const actual = manifest.tracks.reduce(
       (sum, track) =>
@@ -262,7 +288,7 @@ async function buildContent() {
   } catch (error) {
     if (error?.code === "ENOENT") {
       throw new Error(
-        "缺少 content/work/curated.json，请先运行 pnpm content:import。"
+        "缺少 content/work/curated.json，请先运行 pnpm content import。"
       );
     }
     throw error;
@@ -271,9 +297,43 @@ async function buildContent() {
     throw new Error("Invalid curated content workspace");
   }
 
-  const translations = await readOptionalTranslations();
+  const [translations, coreReviewItems] = await Promise.all([
+    readOptionalTranslations(),
+    readOptionalCoreReviews(),
+  ]);
   const translationById = new Map(translations.map(item => [item.id, item]));
   const sourceQuestions = mergeExactDuplicates(curated.questions);
+  let coreQuality;
+  if (coreReviewItems.length) {
+    const reviewById = new Map(coreReviewItems.map(item => [item.id, item]));
+    const coreScores = sourceQuestions
+      .filter(question =>
+        question.collectionIds.some(id => id.endsWith("-core"))
+      )
+      .map(question => {
+        const review = reviewById.get(question.id);
+        if (
+          review?.sourcePrompt !== question.prompt ||
+          review.reason !== "keep" ||
+          review.decision !== "core" ||
+          !Number.isInteger(review.score) ||
+          review.score < 75
+        ) {
+          throw new Error(`${question.id}: missing strict core review`);
+        }
+        return review.score;
+      });
+    coreQuality = {
+      reviewVersion: 2,
+      reviewedQuestions: coreScores.length,
+      minimumScore: Math.min(...coreScores),
+      averageScore: Number(
+        (
+          coreScores.reduce((sum, score) => sum + score, 0) / coreScores.length
+        ).toFixed(1)
+      ),
+    };
+  }
   const translatedQuestions = sourceQuestions.map(question => {
     const translation = translationById.get(question.id);
     if (!translation) return question;
@@ -389,6 +449,7 @@ async function buildContent() {
       (sum, track) => sum + track.occurrenceCount,
       0
     ),
+    ...(coreQuality ? { coreQuality } : {}),
     collections,
     tracks,
   };
@@ -411,6 +472,7 @@ async function buildContent() {
           translations: translations.length,
           canonicalQuestions: manifest.totalQuestions,
           coreQuestions: manifest.coreQuestions,
+          coreQuality,
           totalOccurrences: manifest.totalOccurrences,
           tracks: tracks.map(
             ({ checksum: _checksum, file: _file, ...track }) => track

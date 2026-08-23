@@ -1,7 +1,6 @@
 import {
   getQuestionTypeLabel,
   getDifficultyLabel,
-  getQuestionCompanies,
   isCoreQuestion,
   type Difficulty,
   type Question,
@@ -16,8 +15,6 @@ export interface QuestionFilters {
   topicId: string;
   difficulty: Difficulty | "all";
   questionType: QuestionType | "all";
-  audience: "all" | "campus" | "experienced";
-  company: string | "all";
   favoritesOnly: boolean;
 }
 
@@ -48,55 +45,18 @@ export function filterQuestions(
     ) {
       return false;
     }
-    if (
-      filters.audience !== "all" &&
-      !question.audiences.includes(filters.audience)
-    ) {
-      return false;
-    }
-    if (
-      filters.company !== "all" &&
-      !getQuestionCompanies(question).includes(filters.company)
-    ) {
-      return false;
-    }
     if (filters.favoritesOnly && !favoriteIds.has(question.id)) return false;
     if (!search) return true;
 
     return [
       question.prompt,
-      question.company,
       question.topicLabel,
       getDifficultyLabel(question.difficulty),
       getQuestionTypeLabel(question.questionType),
       ...question.tags,
-      ...question.occurrences.flatMap(occurrence => [
-        occurrence.sourceTitle,
-        occurrence.originalPrompt,
-      ]),
+      ...question.occurrences.map(occurrence => occurrence.originalPrompt),
     ].some(value => value?.toLocaleLowerCase("zh-CN").includes(search));
   });
-}
-
-export function getCompanyOptions(
-  questions: Question[],
-  trackId: TrackId | "all",
-  limit = 100
-): Array<{ name: string; count: number }> {
-  const counts = new Map<string, number>();
-  for (const question of questions) {
-    if (trackId !== "all" && question.trackId !== trackId) continue;
-    for (const company of getQuestionCompanies(question)) {
-      counts.set(company, (counts.get(company) ?? 0) + 1);
-    }
-  }
-
-  return Array.from(counts, ([name, count]) => ({ name, count }))
-    .sort(
-      (left, right) =>
-        right.count - left.count || left.name.localeCompare(right.name, "zh-CN")
-    )
-    .slice(0, limit);
 }
 
 export function getTopicOptions(

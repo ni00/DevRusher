@@ -14,13 +14,11 @@ import { Input } from "@/components/ui/input";
 import { ScrollJumpControls } from "@/components/scroll-jump-controls";
 import {
   filterQuestions,
-  getCompanyOptions,
   getTopicOptions,
   type QuestionFilters,
 } from "../application/filter-questions";
 import {
   getDifficultyLabel,
-  getQuestionCompanies,
   difficultyLevels,
   getQuestionTypeLabel,
   getTrack,
@@ -58,7 +56,6 @@ export function QuestionBank() {
   const searchParams = useSearchParams();
   const initialUrlParams = useRef({
     track: searchParams.get("track"),
-    company: searchParams.get("company"),
     favorites: searchParams.get("favorites"),
     page: searchParams.get("page"),
   });
@@ -140,10 +137,6 @@ export function QuestionBank() {
     () => getTopicOptions(questions, filters.trackId),
     [filters.trackId, questions]
   );
-  const companies = useMemo(
-    () => getCompanyOptions(questions, filters.trackId),
-    [filters.trackId, questions]
-  );
   const resolvedFilters = useMemo<QuestionFilters>(
     () => ({
       ...filters,
@@ -152,13 +145,8 @@ export function QuestionBank() {
         topics.some(topic => topic.id === filters.topicId)
           ? filters.topicId
           : "all",
-      company:
-        filters.company === "all" ||
-        companies.some(company => company.name === filters.company)
-          ? filters.company
-          : "all",
     }),
-    [companies, filters, topics]
+    [filters, topics]
   );
   const effectiveFilters = useMemo(
     () => ({ ...resolvedFilters, search: deferredSearch }),
@@ -207,7 +195,7 @@ export function QuestionBank() {
     setFilters(current => ({
       ...current,
       [key]: value,
-      ...(key === "trackId" ? { company: "all", topicId: "all" } : {}),
+      ...(key === "trackId" ? { topicId: "all" } : {}),
     }));
     setPage(1);
     setPageDraft(null);
@@ -319,9 +307,9 @@ export function QuestionBank() {
           </p>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 lg:grid-cols-3 xl:grid-cols-[minmax(14rem,1.25fr)_repeat(6,minmax(7.5rem,1fr))]">
+        <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 lg:grid-cols-3 xl:grid-cols-[minmax(14rem,1.25fr)_repeat(4,minmax(7.5rem,1fr))]">
           <label className="relative col-span-2 block xl:col-span-1">
-            <span className="sr-only">搜索题目、公司或标签</span>
+            <span className="sr-only">搜索题目或标签</span>
             <Search
               className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
               aria-hidden="true"
@@ -329,7 +317,7 @@ export function QuestionBank() {
             <Input
               value={filters.search}
               onChange={event => updateFilter("search", event.target.value)}
-              placeholder="搜索题目、公司或标签"
+              placeholder="搜索题目或标签"
               className="pl-9"
             />
           </label>
@@ -369,23 +357,6 @@ export function QuestionBank() {
             </select>
           </label>
           <label>
-            <span className="sr-only">求职阶段</span>
-            <select
-              className={cn(selectStyles, "w-full")}
-              value={filters.audience}
-              onChange={event =>
-                updateFilter(
-                  "audience",
-                  event.target.value as QuestionFilters["audience"]
-                )
-              }
-            >
-              <option value="all">校招与社招</option>
-              <option value="campus">校招</option>
-              <option value="experienced">社招</option>
-            </select>
-          </label>
-          <label>
             <span className="sr-only">难度等级</span>
             <select
               className={cn(selectStyles, "w-full")}
@@ -405,21 +376,6 @@ export function QuestionBank() {
               {difficultyLevels.map(level => (
                 <option key={level} value={level}>
                   {level} 级 · {getDifficultyLabel(level)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="sr-only">公司题集</span>
-            <select
-              className={cn(selectStyles, "w-full")}
-              value={resolvedFilters.company}
-              onChange={event => updateFilter("company", event.target.value)}
-            >
-              <option value="all">全部公司</option>
-              {companies.map(company => (
-                <option key={company.name} value={company.name}>
-                  {company.name}（{company.count}）
                 </option>
               ))}
             </select>
@@ -469,8 +425,6 @@ export function QuestionBank() {
             const progress = records.get(question.id);
             const status = progress?.status ?? "unseen";
             const favorite = progress?.favorite ?? false;
-            const companies = getQuestionCompanies(question);
-
             return (
               <article
                 key={question.id}
@@ -491,23 +445,6 @@ export function QuestionBank() {
                       <span>{getQuestionTypeLabel(question.questionType)}</span>
                       <span aria-hidden="true">·</span>
                       <span>{getDifficultyLabel(question.difficulty)}</span>
-                      {companies.length ? (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span
-                            className="max-w-48 truncate"
-                            title={companies.join("、")}
-                          >
-                            {companies.join("、")}
-                          </span>
-                        </>
-                      ) : null}
-                      {question.interviewStage ? (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span>{question.interviewStage}</span>
-                        </>
-                      ) : null}
                     </div>
                     <h2 className="text-base font-medium leading-7">
                       {question.prompt}
@@ -668,7 +605,6 @@ function applyUrlOverrides(
   storedState: QuestionBankViewState,
   params: {
     track: string | null;
-    company: string | null;
     favorites: string | null;
     page: string | null;
   }
@@ -679,11 +615,6 @@ function applyUrlOverrides(
   if (params.track !== null) {
     filters.trackId = isTrackId(params.track) ? params.track : "all";
     filters.topicId = "all";
-    filters.company = "all";
-    page = 1;
-  }
-  if (params.company !== null) {
-    filters.company = params.company || "all";
     page = 1;
   }
   if (params.favorites !== null) {

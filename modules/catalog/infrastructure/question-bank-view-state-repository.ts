@@ -33,8 +33,6 @@ const filtersSchema = z.object({
     z.literal(5),
   ]),
   questionType: z.union([z.literal("all"), z.enum(questionTypes)]),
-  audience: z.enum(["all", "campus", "experienced"]),
-  company: z.string().min(1).max(200),
   favoritesOnly: z.boolean(),
 });
 
@@ -51,8 +49,6 @@ export const defaultQuestionBankViewState: QuestionBankViewState = {
     topicId: "all",
     difficulty: "all",
     questionType: "all",
-    audience: "all",
-    company: "all",
     favoritesOnly: false,
   },
   page: 1,

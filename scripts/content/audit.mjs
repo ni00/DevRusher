@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  getCoreSpecificityRisk,
   getPromptCompletenessRisk,
   getPromptContextRisk,
   getPromptPremiseRisk,
@@ -53,8 +54,13 @@ for (const track of manifest.tracks) {
       (difficultyCounts[question.difficulty] ?? 0) + 1;
     questionTypeCounts[question.questionType] =
       (questionTypeCounts[question.questionType] ?? 0) + 1;
-    if (question.collectionIds.some(id => id.endsWith("-core"))) {
+    const isCore = question.collectionIds.some(id => id.endsWith("-core"));
+    if (isCore) {
       coreQuestions += 1;
+      const coreSpecificityRisk = getCoreSpecificityRisk(question.prompt);
+      if (coreSpecificityRisk) {
+        failures.push(`${question.id}: ${coreSpecificityRisk}`);
+      }
     }
     if (question.occurrences.some(item => item.sourceKind === "firsthand")) {
       firsthandQuestions += 1;
