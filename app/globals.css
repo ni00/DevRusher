@@ -5,8 +5,8 @@
   :root {
     color-scheme: light;
     --font-ui:
-      "Noto Sans SC Variable", "Noto Sans SC", "Microsoft YaHei", ui-sans-serif,
-      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "Microsoft YaHei", "PingFang SC", sans-serif;
     --font-code:
       "JetBrains Mono Variable", "JetBrains Mono", "SFMono-Regular", Consolas,
       "Liberation Mono", monospace;

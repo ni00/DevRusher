@@ -41,3 +41,6 @@ jobs:
 
       - name: Build production application
         run: pnpm build
+
+      - name: Check performance budgets
+        run: pnpm perf:check

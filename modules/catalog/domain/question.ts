@@ -151,6 +151,18 @@ export function isTrackId(value: string): value is TrackId {
   return trackIds.includes(value as TrackId);
 }
 
+export function getTrackIdFromQuestionId(
+  questionId: string
+): TrackId | undefined {
+  if (!questionId.startsWith("real:")) return undefined;
+  const separator = questionId.indexOf(":", "real:".length);
+  const candidate = questionId.slice(
+    "real:".length,
+    separator === -1 ? undefined : separator
+  );
+  return isTrackId(candidate) ? candidate : undefined;
+}
+
 export function getTrack(trackId: TrackId): TrackDefinition {
   const track = trackDefinitions.find(item => item.id === trackId);
 

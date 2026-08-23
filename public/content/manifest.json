@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "contentVersion": "v2-5b0c79f28a61",
-  "generatedAt": "2026-08-23T09:48:47.974Z",
+  "generatedAt": "2026-08-23T13:48:57.066Z",
   "totalQuestions": 8280,
   "coreQuestions": 900,
   "totalOccurrences": 8517,
@@ -133,7 +133,9 @@
         "fundamentals-core": 100
       },
       "checksum": "d577785283184ff56dcc3e9ac01c8f662b19725b30fb677387550e9ebf737da3",
-      "file": "/content/packs/v2-5b0c79f28a61/fundamentals.json"
+      "coreChecksum": "e2ad36965c3fd858c546a53591c9b0cd6abfe008123b2e7113f6e686a849d36e",
+      "file": "/content/packs/v2-5b0c79f28a61/fundamentals.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/fundamentals.core.json"
     },
     {
       "id": "frontend",
@@ -146,7 +148,9 @@
         "frontend-core": 100
       },
       "checksum": "416a9354177e2d54b07b02077ad737d523c71c1c30651290932c18fd98db8cd4",
-      "file": "/content/packs/v2-5b0c79f28a61/frontend.json"
+      "coreChecksum": "5b376ab9ce593ac3749e83fd3f2e249eaf85bd8c3bb107618e8d6dbb4c829b2f",
+      "file": "/content/packs/v2-5b0c79f28a61/frontend.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/frontend.core.json"
     },
     {
       "id": "backend",
@@ -159,7 +163,9 @@
         "backend-core": 100
       },
       "checksum": "25ef94f4724a527f5ee9d7d425a02ccbfa36eb15feecefe6e713384ba5c6c882",
-      "file": "/content/packs/v2-5b0c79f28a61/backend.json"
+      "coreChecksum": "d463a4983087cf390c21fcc3530776d12ee758d0d480067e85bd28c55d3d2d15",
+      "file": "/content/packs/v2-5b0c79f28a61/backend.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/backend.core.json"
     },
     {
       "id": "mobile",
@@ -172,7 +178,9 @@
         "mobile-core": 100
       },
       "checksum": "58bea0e64e607ec058432da0b4971fcb702dfe64584c17689d1e8aaec450f6b5",
-      "file": "/content/packs/v2-5b0c79f28a61/mobile.json"
+      "coreChecksum": "94eb821859c0b0d5d77bbeaa54ae36586b56e31e7efb70bbaf1a348e5e487e35",
+      "file": "/content/packs/v2-5b0c79f28a61/mobile.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/mobile.core.json"
     },
     {
       "id": "quality",
@@ -185,7 +193,9 @@
         "quality-core": 100
       },
       "checksum": "f64a6926b6126b40eb8a05e8d1a8a625a9f809fa2bbc8b5dfc1ceff7ac3a9221",
-      "file": "/content/packs/v2-5b0c79f28a61/quality.json"
+      "coreChecksum": "a06260c0dbe4b8223d9dd2cb4c09da5d4b11ab58d8e902c82643b2e9cdfd4a1a",
+      "file": "/content/packs/v2-5b0c79f28a61/quality.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/quality.core.json"
     },
     {
       "id": "platform",
@@ -198,7 +208,9 @@
         "platform-core": 100
       },
       "checksum": "ff12dae2d4c3a1848b24da477dd35b07560ee3c85dbeadf4df31f3062cd78e68",
-      "file": "/content/packs/v2-5b0c79f28a61/platform.json"
+      "coreChecksum": "67f03b0c94a6b74b1653b43e3992e593ff7549d21b32698779a42d1c1016be5e",
+      "file": "/content/packs/v2-5b0c79f28a61/platform.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/platform.core.json"
     },
     {
       "id": "llm-algorithm",
@@ -211,7 +223,9 @@
         "llm-algorithm-core": 100
       },
       "checksum": "cecb6618e2a846a1c34e8a88a48dbd6214a502be4cdbb34daf52d5d04c3f54bd",
-      "file": "/content/packs/v2-5b0c79f28a61/llm-algorithm.json"
+      "coreChecksum": "b18b7c3fcfdca7fd4b66d17ad3f9a8db0822843a71fc07a5867e5f4d84e5721e",
+      "file": "/content/packs/v2-5b0c79f28a61/llm-algorithm.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/llm-algorithm.core.json"
     },
     {
       "id": "agent-evaluation",
@@ -224,7 +238,9 @@
         "agent-evaluation-core": 100
       },
       "checksum": "a032ad6a44b56513aa0a54b2520021fa5981c9128f7d4f9231731eef3be0163a",
-      "file": "/content/packs/v2-5b0c79f28a61/agent-evaluation.json"
+      "coreChecksum": "aaa7ec0ac8a09fd573ed9b63c1e0cf89373b2c076cb25736b489d70099971537",
+      "file": "/content/packs/v2-5b0c79f28a61/agent-evaluation.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/agent-evaluation.core.json"
     },
     {
       "id": "agent-engineering",
@@ -237,7 +253,9 @@
         "agent-engineering-core": 100
       },
       "checksum": "816f36c28395435c7addec3f6a6b96fc332e6e1ec633f99509c09a2069fcda80",
-      "file": "/content/packs/v2-5b0c79f28a61/agent-engineering.json"
+      "coreChecksum": "3387d5e24cc094ff3457d5e8267b4376b55c10a18a8227090536bb2afca6bb96",
+      "file": "/content/packs/v2-5b0c79f28a61/agent-engineering.json",
+      "coreFile": "/content/packs/v2-5b0c79f28a61/agent-engineering.core.json"
     }
   ]
 }

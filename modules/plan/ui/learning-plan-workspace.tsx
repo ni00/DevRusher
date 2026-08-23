@@ -55,7 +55,7 @@ export function LearningPlanWorkspace() {
 
     const controller = new AbortController();
     Promise.all([
-      loadQuestionCatalog(controller.signal, plan.trackIds),
+      loadQuestionCatalog(controller.signal, plan.trackIds, "core"),
       listReviewEvents(),
     ])
       .then(([catalog, events]) => {

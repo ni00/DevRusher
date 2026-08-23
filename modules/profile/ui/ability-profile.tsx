@@ -11,14 +11,17 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { buttonStyles } from "@/components/ui/button";
 import {
+  getTrackIdFromQuestionId,
   getTrack,
   trackDefinitions,
-  type Question,
   type TrackId,
 } from "@/modules/catalog/domain/question";
-import { loadQuestionCatalog } from "@/modules/catalog/infrastructure/content-pack-source";
+import { loadContentManifest } from "@/modules/catalog/infrastructure/content-pack-source";
 import { useQuestionProgress } from "@/modules/progress/ui/use-question-progress";
-import { isReviewDue } from "@/modules/progress/domain/question-progress";
+import {
+  isReviewDue,
+  type QuestionProgress,
+} from "@/modules/progress/domain/question-progress";
 import {
   listInterviewSessions,
   type InterviewSessionRecord,
@@ -34,7 +37,9 @@ interface TrackSignal {
 }
 
 export function AbilityProfile() {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [catalogSizes, setCatalogSizes] = useState<Map<TrackId, number>>(
+    new Map()
+  );
   const [interviewSessions, setInterviewSessions] = useState<
     InterviewSessionRecord[]
   >([]);
@@ -43,11 +48,13 @@ export function AbilityProfile() {
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
-      loadQuestionCatalog(controller.signal),
+      loadContentManifest(controller.signal),
       listInterviewSessions(),
     ])
-      .then(([catalog, sessions]) => {
-        setQuestions(catalog);
+      .then(([manifest, sessions]) => {
+        setCatalogSizes(
+          new Map(manifest.tracks.map(track => [track.id, track.count]))
+        );
         setInterviewSessions(sessions);
       })
       .catch(error => {
@@ -59,17 +66,17 @@ export function AbilityProfile() {
   }, []);
 
   const signals = useMemo<TrackSignal[]>(() => {
-    const questionTrack = new Map(
-      questions.map(item => [item.id, item.trackId])
-    );
+    const recordsByTrack = new Map<TrackId, QuestionProgress[]>();
+    for (const record of records.values()) {
+      const recordTrackId = getTrackIdFromQuestionId(record.questionId);
+      if (!recordTrackId) continue;
+      const related = recordsByTrack.get(recordTrackId) ?? [];
+      related.push(record);
+      recordsByTrack.set(recordTrackId, related);
+    }
 
     return trackDefinitions.map(track => {
-      const catalogSize = questions.filter(
-        item => item.trackId === track.id
-      ).length;
-      const related = Array.from(records.values()).filter(
-        item => questionTrack.get(item.questionId) === track.id
-      );
+      const related = recordsByTrack.get(track.id) ?? [];
       const attempted = related.filter(item => item.attempts > 0).length;
       const mastered = related.filter(
         item => item.status === "mastered"
@@ -78,13 +85,13 @@ export function AbilityProfile() {
       return {
         id: track.id,
         label: track.label,
-        catalogSize,
+        catalogSize: catalogSizes.get(track.id) ?? 0,
         attempted,
         mastered,
         score: attempted ? Math.round((mastered / attempted) * 100) : 0,
       };
     });
-  }, [questions, records]);
+  }, [catalogSizes, records]);
 
   const values = Array.from(records.values());
   const attempted = values.filter(item => item.attempts > 0).length;

@@ -88,6 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -107,6 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-1">
             <Link
               href="/settings"
+              prefetch={false}
               className={cn(
                 "flex h-10 min-w-0 flex-1 items-center gap-3 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 pathname.startsWith("/settings") &&
@@ -135,6 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-20 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between border-b border-border bg-background/95 pb-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:hidden">
           <Link
             href="/"
+            prefetch={false}
             className="flex items-center gap-2 font-semibold tracking-tight"
           >
             <span className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground">
@@ -156,6 +159,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ThemeToggle />
             <Link
               href="/settings"
+              prefetch={false}
               className="grid size-11 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="设置与数据"
             >
@@ -181,6 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-w-0 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors active:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",

@@ -194,6 +194,19 @@ async function verifyPublishedContent() {
     if (sha256(serialized) !== track.checksum) {
       throw new Error(`${track.id}: checksum mismatch`);
     }
+    const corePackPath = join(
+      root,
+      "public",
+      track.coreFile.replace(/^\//, "")
+    );
+    const coreSerialized = await readFile(corePackPath, "utf8");
+    const corePack = JSON.parse(coreSerialized);
+    if (!Array.isArray(corePack) || corePack.length !== track.coreCount) {
+      throw new Error(`${track.id}: core pack count mismatch`);
+    }
+    if (sha256(coreSerialized) !== track.coreChecksum) {
+      throw new Error(`${track.id}: core pack checksum mismatch`);
+    }
 
     let trackCoreCount = 0;
     let trackOccurrenceCount = 0;
@@ -240,6 +253,12 @@ async function verifyPublishedContent() {
     }
     if (track.topicCount !== topicCount) {
       throw new Error(`${track.id}: topic count mismatch`);
+    }
+    const expectedCorePack = pack.filter(question =>
+      question.collectionIds.some(id => id.endsWith("-core"))
+    );
+    if (JSON.stringify(corePack) !== JSON.stringify(expectedCorePack)) {
+      throw new Error(`${track.id}: core pack content mismatch`);
     }
     totalQuestions += pack.length;
     coreQuestions += trackCoreCount;
@@ -377,6 +396,11 @@ async function buildContent() {
       }
     }
     const serialized = JSON.stringify(pack);
+    const coreSerialized = JSON.stringify(
+      pack.filter(question =>
+        question.collectionIds.some(id => id.endsWith("-core"))
+      )
+    );
     const questionsInCollections = {};
     for (const question of pack) {
       for (const collectionId of question.collectionIds) {
@@ -397,7 +421,9 @@ async function buildContent() {
       topicCount: new Set(pack.map(question => question.topicId)).size,
       questionsInCollections,
       serialized,
+      coreSerialized,
       checksum: sha256(serialized),
+      coreChecksum: sha256(coreSerialized),
     });
   }
 
@@ -408,18 +434,27 @@ async function buildContent() {
   const outputDirectory = join(root, "public/content/packs", contentVersion);
   await mkdir(outputDirectory, { recursive: true });
   await Promise.all(
-    packArtifacts.map(artifact =>
+    packArtifacts.flatMap(artifact => [
       writeFile(
         join(outputDirectory, `${artifact.id}.json`),
         artifact.serialized
-      )
-    )
+      ),
+      writeFile(
+        join(outputDirectory, `${artifact.id}.core.json`),
+        artifact.coreSerialized
+      ),
+    ])
   );
 
   const tracks = packArtifacts.map(
-    ({ serialized: _serialized, ...artifact }) => ({
+    ({
+      serialized: _serialized,
+      coreSerialized: _coreSerialized,
+      ...artifact
+    }) => ({
       ...artifact,
       file: `/content/packs/${contentVersion}/${artifact.id}.json`,
+      coreFile: `/content/packs/${contentVersion}/${artifact.id}.core.json`,
     })
   );
   const collectionCounts = new Map();
@@ -475,7 +510,13 @@ async function buildContent() {
           coreQuality,
           totalOccurrences: manifest.totalOccurrences,
           tracks: tracks.map(
-            ({ checksum: _checksum, file: _file, ...track }) => track
+            ({
+              checksum: _checksum,
+              coreChecksum: _coreChecksum,
+              file: _file,
+              coreFile: _coreFile,
+              ...track
+            }) => track
           ),
         },
         null,

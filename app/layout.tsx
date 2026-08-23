@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/noto-sans-sc/wght.css";
 import "@fontsource-variable/jetbrains-mono/wght.css";
 import "microlighter/themes/tokyo-night.css";
 import "./globals.css";

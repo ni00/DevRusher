@@ -47,6 +47,7 @@ pnpm dev
 pnpm check # 格式、Lint、类型、测试和题包校验
 pnpm fix   # 自动修复格式和 Lint
 pnpm build # 生产构建
+pnpm perf:check # 构建后检查首屏、题包和字体预算
 ```
 
 Vercel 通过 `Dockerfile.vercel` 部署 Node.js 26 容器。首次连接时，在 Build and

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   Bookmark,
   BookmarkCheck,
@@ -29,7 +30,10 @@ import {
   type Question,
   type TrackId,
 } from "../domain/question";
-import { loadQuestionCatalog } from "../infrastructure/content-pack-source";
+import {
+  loadQuestionCatalog,
+  type QuestionCatalogScope,
+} from "../infrastructure/content-pack-source";
 import {
   defaultQuestionBankViewState,
   getQuestionBankViewState,
@@ -39,7 +43,14 @@ import {
 import type { ProgressStatus } from "@/modules/progress/domain/question-progress";
 import { useQuestionProgress } from "@/modules/progress/ui/use-question-progress";
 import { cn } from "@/lib/utils";
-import { QuestionAnalysisDialog } from "@/modules/question-analysis/ui/question-analysis";
+
+const QuestionAnalysisDialog = dynamic(
+  () =>
+    import("@/modules/question-analysis/ui/question-analysis").then(
+      module => module.QuestionAnalysisDialog
+    ),
+  { ssr: false }
+);
 
 const PAGE_SIZE = 20;
 
@@ -65,8 +76,13 @@ export function QuestionBank() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
   const [activeQuestion, setActiveQuestion] = useState<Question>();
+  const [analysisDialogMounted, setAnalysisDialogMounted] = useState(false);
   const initialRequestedTracks = useRef<TrackId[] | undefined>(undefined);
-  const loadedTracks = useRef<Set<TrackId>>(new Set());
+  const initialScope = useRef<QuestionCatalogScope>("core");
+  const loadedTrackScopes = useRef<Map<TrackId, QuestionCatalogScope>>(
+    new Map()
+  );
+  const activeUpdates = useRef(0);
   const questionListRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [pageDraft, setPageDraft] = useState<string | null>(null);
@@ -100,6 +116,7 @@ export function QuestionBank() {
           nextState.filters.trackId === "all"
             ? undefined
             : [nextState.filters.trackId];
+        initialScope.current = nextState.filters.scope;
         setFilters(nextState.filters);
         setPage(nextState.page);
         setPageDraft(null);
@@ -115,11 +132,17 @@ export function QuestionBank() {
     if (!isViewStateReady) return;
     const controller = new AbortController();
     const requestedTracks = initialRequestedTracks.current;
+    const requestedScope = initialScope.current;
 
-    loadQuestionCatalog(controller.signal, requestedTracks)
+    loadQuestionCatalog(controller.signal, requestedTracks, requestedScope)
       .then(items => {
         setQuestions(items);
-        loadedTracks.current = new Set(requestedTracks ?? trackIds);
+        loadedTrackScopes.current = new Map(
+          (requestedTracks ?? trackIds).map(trackId => [
+            trackId,
+            requestedScope,
+          ])
+        );
         setIsLoading(false);
       })
       .catch(loadError => {
@@ -224,19 +247,22 @@ export function QuestionBank() {
     goToPage(requested);
   };
 
-  const loadTrack = async (trackId: TrackId | "all") => {
-    const requested =
-      trackId === "all"
-        ? trackIds.filter(value => !loadedTracks.current.has(value))
-        : loadedTracks.current.has(trackId)
-          ? []
-          : [trackId];
+  const loadTrack = async (
+    trackId: TrackId | "all",
+    scope: QuestionCatalogScope
+  ) => {
+    const candidates = trackId === "all" ? trackIds : [trackId];
+    const requested = candidates.filter(value => {
+      const loadedScope = loadedTrackScopes.current.get(value);
+      return scope === "all" ? loadedScope !== "all" : !loadedScope;
+    });
     if (!requested.length) return;
 
+    activeUpdates.current += 1;
     setIsUpdating(true);
     setError("");
     try {
-      const items = await loadQuestionCatalog(undefined, requested);
+      const items = await loadQuestionCatalog(undefined, requested, scope);
       setQuestions(current => {
         const merged = new Map(
           current.map(question => [question.id, question])
@@ -244,11 +270,12 @@ export function QuestionBank() {
         for (const question of items) merged.set(question.id, question);
         return Array.from(merged.values());
       });
-      requested.forEach(value => loadedTracks.current.add(value));
+      requested.forEach(value => loadedTrackScopes.current.set(value, scope));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "题包加载失败");
     } finally {
-      setIsUpdating(false);
+      activeUpdates.current -= 1;
+      setIsUpdating(activeUpdates.current > 0);
     }
   };
 
@@ -288,7 +315,10 @@ export function QuestionBank() {
                 type="button"
                 role="radio"
                 aria-checked={filters.scope === value}
-                onClick={() => updateFilter("scope", value)}
+                onClick={() => {
+                  updateFilter("scope", value);
+                  void loadTrack(filters.trackId, value);
+                }}
                 className={cn(
                   "h-8 rounded px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   filters.scope === value
@@ -330,7 +360,7 @@ export function QuestionBank() {
                 const value = event.target.value;
                 const nextTrack = isTrackId(value) ? value : "all";
                 updateFilter("trackId", nextTrack);
-                void loadTrack(nextTrack);
+                void loadTrack(nextTrack, filters.scope);
               }}
             >
               <option value="all">全部方向</option>
@@ -493,7 +523,10 @@ export function QuestionBank() {
                     </select>
                     <Button
                       size="sm"
-                      onClick={() => setActiveQuestion(question)}
+                      onClick={() => {
+                        setAnalysisDialogMounted(true);
+                        setActiveQuestion(question);
+                      }}
                     >
                       解析题目
                     </Button>
@@ -591,17 +624,19 @@ export function QuestionBank() {
         </nav>
       ) : null}
 
-      <QuestionAnalysisDialog
-        question={activeQuestion}
-        isFavorite={Boolean(
-          activeQuestion && records.get(activeQuestion.id)?.favorite
-        )}
-        open={Boolean(activeQuestion)}
-        onClose={() => setActiveQuestion(undefined)}
-        onToggleFavorite={() => {
-          if (activeQuestion) toggleFavorite(activeQuestion.id);
-        }}
-      />
+      {analysisDialogMounted ? (
+        <QuestionAnalysisDialog
+          question={activeQuestion}
+          isFavorite={Boolean(
+            activeQuestion && records.get(activeQuestion.id)?.favorite
+          )}
+          open={Boolean(activeQuestion)}
+          onClose={() => setActiveQuestion(undefined)}
+          onToggleFavorite={() => {
+            if (activeQuestion) toggleFavorite(activeQuestion.id);
+          }}
+        />
+      ) : null}
       <ScrollJumpControls className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-20 lg:bottom-6 lg:right-6" />
     </div>
   );

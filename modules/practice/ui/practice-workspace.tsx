@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,7 +9,7 @@ import {
   LoaderCircle,
   RotateCcw,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,32 +18,45 @@ import {
   getTrack,
   isCoreQuestion,
   questionTypes,
+  trackIds,
   trackDefinitions,
   type Question,
   type QuestionType,
   type TrackId,
 } from "@/modules/catalog/domain/question";
-import { loadQuestionCatalog } from "@/modules/catalog/infrastructure/content-pack-source";
+import {
+  loadQuestionCatalog,
+  type QuestionCatalogScope,
+} from "@/modules/catalog/infrastructure/content-pack-source";
 import {
   isReviewDue,
   type ReviewRating,
 } from "@/modules/progress/domain/question-progress";
 import { useQuestionProgress } from "@/modules/progress/ui/use-question-progress";
-import { QuestionAnalysisDialog } from "@/modules/question-analysis/ui/question-analysis";
+
+const QuestionAnalysisDialog = dynamic(
+  () =>
+    import("@/modules/question-analysis/ui/question-analysis").then(
+      module => module.QuestionAnalysisDialog
+    ),
+  { ssr: false }
+);
 
 type Phase = "loading" | "setup" | "session" | "complete" | "error";
 type SessionSize = 10 | 20 | 30 | 60;
 
-function shuffled<T>(items: T[]): T[] {
+function sample<T>(items: T[], count: number): T[] {
   const result = [...items];
+  const random = new Uint32Array(1);
+  const limit = Math.min(count, result.length);
 
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const random = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0;
-    const target = random % (index + 1);
+  for (let index = 0; index < limit; index += 1) {
+    crypto.getRandomValues(random);
+    const target = index + ((random[0] ?? 0) % (result.length - index));
     [result[index], result[target]] = [result[target] as T, result[index] as T];
   }
 
-  return result;
+  return result.slice(0, limit);
 }
 
 export function PracticeWorkspace({
@@ -61,40 +75,62 @@ export function PracticeWorkspace({
   const [session, setSession] = useState<Question[]>([]);
   const [trackId, setTrackId] = useState<TrackId | "all">(initialTrack);
   const [questionType, setQuestionType] = useState<QuestionType | "all">("all");
-  const [scope, setScope] = useState<"core" | "all">("core");
+  const [scope, setScope] = useState<QuestionCatalogScope>("core");
   const [reviewOnly, setReviewOnly] = useState(initialReviewOnly);
   const [size, setSize] = useState<SessionSize>(initialSize);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState("");
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisDialogMounted, setAnalysisDialogMounted] = useState(false);
+  const [isCatalogUpdating, setIsCatalogUpdating] = useState(false);
+  const [catalogUpdateError, setCatalogUpdateError] = useState("");
+  const loadedTrackScopes = useRef<Map<TrackId, QuestionCatalogScope>>(
+    new Map()
+  );
+  const activeCatalogUpdates = useRef(0);
   const { records, isReady, recordReview, toggleFavorite } =
     useQuestionProgress();
 
-  const matchesSelection = (question: Question) => {
-    if (scope === "core" && !isCoreQuestion(question)) return false;
-    if (trackId !== "all" && question.trackId !== trackId) return false;
-    return questionType === "all" || question.questionType === questionType;
-  };
-  const dueCount = catalog.filter(
-    question =>
-      matchesSelection(question) && isReviewDue(records.get(question.id))
-  ).length;
-  const eligibleCandidates = catalog.filter(
-    question =>
-      matchesSelection(question) &&
-      (!reviewOnly || isReviewDue(records.get(question.id)))
-  );
+  const { dueCount, eligibleCandidates } = useMemo(() => {
+    let nextDueCount = 0;
+    const nextEligibleCandidates: Question[] = [];
+
+    for (const question of catalog) {
+      if (scope === "core" && !isCoreQuestion(question)) continue;
+      if (trackId !== "all" && question.trackId !== trackId) continue;
+      if (questionType !== "all" && question.questionType !== questionType) {
+        continue;
+      }
+
+      const isDue = isReviewDue(records.get(question.id));
+      if (isDue) nextDueCount += 1;
+      if (!reviewOnly || isDue) nextEligibleCandidates.push(question);
+    }
+
+    return {
+      dueCount: nextDueCount,
+      eligibleCandidates: nextEligibleCandidates,
+    };
+  }, [catalog, questionType, records, reviewOnly, scope, trackId]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    const requestedTracks =
-      initialQuestionId && initialTrack !== "all" ? [initialTrack] : undefined;
+    const requestedTracks = initialTrack === "all" ? undefined : [initialTrack];
+    const requestedScope: QuestionCatalogScope = initialQuestionId
+      ? "all"
+      : "core";
 
-    loadQuestionCatalog(controller.signal, requestedTracks)
+    loadQuestionCatalog(controller.signal, requestedTracks, requestedScope)
       .then(items => {
         setCatalog(items);
+        loadedTrackScopes.current = new Map(
+          (requestedTracks ?? trackIds).map(loadedTrackId => [
+            loadedTrackId,
+            requestedScope,
+          ])
+        );
         const selected = initialQuestionId
           ? items.find(question => question.id === initialQuestionId)
           : undefined;
@@ -117,12 +153,53 @@ export function PracticeWorkspace({
     return () => controller.abort();
   }, [initialQuestionId, initialTrack]);
 
+  const ensureCatalog = async (
+    nextTrackId: TrackId | "all",
+    nextScope: QuestionCatalogScope
+  ) => {
+    const candidates = nextTrackId === "all" ? trackIds : [nextTrackId];
+    const requestedTracks = candidates.filter(candidate => {
+      const loadedScope = loadedTrackScopes.current.get(candidate);
+      return nextScope === "all" ? loadedScope !== "all" : !loadedScope;
+    });
+    if (!requestedTracks.length) return;
+
+    activeCatalogUpdates.current += 1;
+    setIsCatalogUpdating(true);
+    setCatalogUpdateError("");
+    try {
+      const items = await loadQuestionCatalog(
+        undefined,
+        requestedTracks,
+        nextScope
+      );
+      setCatalog(current => {
+        const merged = new Map(
+          current.map(question => [question.id, question])
+        );
+        for (const question of items) merged.set(question.id, question);
+        return Array.from(merged.values());
+      });
+      requestedTracks.forEach(value =>
+        loadedTrackScopes.current.set(value, nextScope)
+      );
+    } catch (loadError) {
+      setCatalogUpdateError(
+        loadError instanceof Error ? loadError.message : "题包加载失败"
+      );
+    } finally {
+      activeCatalogUpdates.current -= 1;
+      setIsCatalogUpdating(activeCatalogUpdates.current > 0);
+    }
+  };
+
   const startSession = () => {
     if (!eligibleCandidates.length) return;
-    setSession(shuffled(eligibleCandidates).slice(0, size));
+    setSession(sample(eligibleCandidates, size));
     setIndex(0);
     setAnswer("");
     setAnalysisOpen(false);
+    setAnalysisDialogMounted(false);
     setPhase("session");
   };
 
@@ -139,6 +216,7 @@ export function PracticeWorkspace({
     setIndex(value => value + 1);
     setAnswer("");
     setAnalysisOpen(false);
+    setAnalysisDialogMounted(false);
   };
 
   if (phase === "loading") {
@@ -183,7 +261,10 @@ export function PracticeWorkspace({
                     key={value}
                     type="button"
                     aria-pressed={scope === value}
-                    onClick={() => setScope(value)}
+                    onClick={() => {
+                      setScope(value);
+                      void ensureCatalog(trackId, value);
+                    }}
                     className={`h-9 rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       scope === value
                         ? "bg-primary text-primary-foreground"
@@ -200,9 +281,11 @@ export function PracticeWorkspace({
               练习方向
               <select
                 value={trackId}
-                onChange={event =>
-                  setTrackId(event.target.value as TrackId | "all")
-                }
+                onChange={event => {
+                  const nextTrackId = event.target.value as TrackId | "all";
+                  setTrackId(nextTrackId);
+                  void ensureCatalog(nextTrackId, scope);
+                }}
                 className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/25"
               >
                 <option value="all">混合方向</option>
@@ -286,10 +369,20 @@ export function PracticeWorkspace({
           <Button
             className="mt-7 w-full sm:w-auto"
             onClick={startSession}
-            disabled={!eligibleCandidates.length}
+            disabled={isCatalogUpdating || !eligibleCandidates.length}
           >
-            开始看题 <ArrowRight aria-hidden="true" />
+            {isCatalogUpdating ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : (
+              <ArrowRight aria-hidden="true" />
+            )}
+            {isCatalogUpdating ? "正在加载题包" : "开始看题"}
           </Button>
+          {catalogUpdateError ? (
+            <p className="mt-3 text-xs text-destructive" role="alert">
+              {catalogUpdateError}
+            </p>
+          ) : null}
           {!eligibleCandidates.length && isReady ? (
             <p className="mt-3 text-xs text-muted-foreground">
               当前条件下没有可练题目；可以关闭到期复习或调整方向与题型。
@@ -378,7 +471,14 @@ export function PracticeWorkspace({
           </details>
 
           <div className="mt-6 border-t border-border pt-5">
-            <Button onClick={() => setAnalysisOpen(true)}>解析题目</Button>
+            <Button
+              onClick={() => {
+                setAnalysisDialogMounted(true);
+                setAnalysisOpen(true);
+              }}
+            >
+              解析题目
+            </Button>
             <p className="mt-2 text-xs text-muted-foreground">
               点击后直接打开解析；你的可选回答会一并交给模型评价。
             </p>
@@ -438,15 +538,17 @@ export function PracticeWorkspace({
           <ArrowLeft aria-hidden="true" /> 返回题库
         </Link>
       </aside>
-      <QuestionAnalysisDialog
-        key={question.id}
-        question={question}
-        answer={answer}
-        isFavorite={progress?.favorite ?? false}
-        open={analysisOpen}
-        onClose={() => setAnalysisOpen(false)}
-        onToggleFavorite={() => toggleFavorite(question.id)}
-      />
+      {analysisDialogMounted ? (
+        <QuestionAnalysisDialog
+          key={question.id}
+          question={question}
+          answer={answer}
+          isFavorite={progress?.favorite ?? false}
+          open={analysisOpen}
+          onClose={() => setAnalysisOpen(false)}
+          onToggleFavorite={() => toggleFavorite(question.id)}
+        />
+      ) : null}
     </div>
   );
 }
