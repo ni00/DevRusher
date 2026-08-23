@@ -442,8 +442,10 @@ export function PracticeWorkspace({
         key={question.id}
         question={question}
         answer={answer}
+        isFavorite={progress?.favorite ?? false}
         open={analysisOpen}
         onClose={() => setAnalysisOpen(false)}
+        onToggleFavorite={() => toggleFavorite(question.id)}
       />
     </div>
   );

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import {
+  Bookmark,
+  BookmarkCheck,
   Check,
   CheckCircle2,
   Copy,
@@ -69,13 +71,17 @@ function isAnalysisAbort(error: unknown, signal?: AbortSignal): boolean {
 export function QuestionAnalysisDialog({
   question,
   answer,
+  isFavorite,
   open,
   onClose,
+  onToggleFavorite,
 }: {
   question?: Question;
   answer?: string;
+  isFavorite: boolean;
   open: boolean;
   onClose: () => void;
+  onToggleFavorite: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const analysisBodyRef = useRef<HTMLDivElement>(null);
@@ -448,6 +454,7 @@ export function QuestionAnalysisDialog({
   const visibleError = errors[visiblePromptId];
   const { label: questionCopyLabel, icon: QuestionCopyIcon } =
     questionCopyContent[questionCopyStatus];
+  const favoriteLabel = isFavorite ? "取消收藏" : "收藏题目";
 
   return (
     <dialog
@@ -465,15 +472,30 @@ export function QuestionAnalysisDialog({
       )}
     >
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-4 sm:px-6 sm:py-4">
-        <div className="flex min-w-0 flex-1 items-start gap-1 sm:gap-2">
-          <h2 className="line-clamp-2 min-w-0 flex-1 text-base font-semibold leading-6 sm:text-lg">
-            {question?.prompt}
-          </h2>
+        <h2 className="line-clamp-2 min-w-0 flex-1 text-base font-semibold leading-6 sm:text-lg">
+          {question?.prompt}
+        </h2>
+        <div className="-mr-2 -mt-2 flex shrink-0 items-center gap-1">
           <Button
-            size="sm"
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            aria-label={favoriteLabel}
+            aria-pressed={isFavorite}
+            title={favoriteLabel}
+            onClick={onToggleFavorite}
+          >
+            {isFavorite ? (
+              <BookmarkCheck className="text-primary" aria-hidden="true" />
+            ) : (
+              <Bookmark aria-hidden="true" />
+            )}
+          </Button>
+          <Button
+            size="icon"
             variant="ghost"
             className={cn(
-              "-mt-1 h-8 shrink-0 px-2 text-xs",
+              "size-8",
               questionCopyStatus === "copied" && "text-success",
               questionCopyStatus === "error" && "text-destructive"
             )}
@@ -482,23 +504,20 @@ export function QuestionAnalysisDialog({
             onClick={() => void handleCopyQuestion()}
           >
             <QuestionCopyIcon aria-hidden="true" />
-            <span className="hidden sm:inline" aria-hidden="true">
-              {questionCopyLabel}
-            </span>
             <span className="sr-only" aria-live="polite">
               {questionCopyLabel}
             </span>
           </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="关闭解析窗口"
+            title="关闭解析窗口"
+            onClick={onClose}
+          >
+            <X aria-hidden="true" />
+          </Button>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="-mr-2 -mt-2 shrink-0"
-          aria-label="关闭解析窗口"
-          onClick={onClose}
-        >
-          <X aria-hidden="true" />
-        </Button>
       </header>
 
       <div className="border-b border-border px-4 py-3 sm:flex sm:items-center sm:gap-2 sm:px-6">

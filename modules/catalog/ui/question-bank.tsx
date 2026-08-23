@@ -593,8 +593,14 @@ export function QuestionBank() {
 
       <QuestionAnalysisDialog
         question={activeQuestion}
+        isFavorite={Boolean(
+          activeQuestion && records.get(activeQuestion.id)?.favorite
+        )}
         open={Boolean(activeQuestion)}
         onClose={() => setActiveQuestion(undefined)}
+        onToggleFavorite={() => {
+          if (activeQuestion) toggleFavorite(activeQuestion.id);
+        }}
       />
       <ScrollJumpControls className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-20 lg:bottom-6 lg:right-6" />
     </div>
