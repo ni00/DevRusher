@@ -15,7 +15,7 @@ const inbox = join(root, "content/inbox");
 const output = join(root, "content/work/curated.json");
 
 const collections = [
-  ["fundamentals-library", "计算机基础真题库", "有明确来源的计算机基础题目"],
+  ["fundamentals-library", "计算机基础完整题库", "有明确来源的计算机基础题目"],
   ["fundamentals-core", "计算机基础精选", "适合优先完成的计算机基础题目"],
   ["frontend-library", "前端完整题库", "来自社区题库和真实面经的前端问题"],
   ["frontend-core", "前端精选", "从完整题库中选出的前端核心问题"],
@@ -27,18 +27,22 @@ const collections = [
   ["quality-core", "质量与测试精选", "适合优先完成的质量与测试问题"],
   ["platform-library", "平台与运维完整题库", "有明确来源的平台与运维问题"],
   ["platform-core", "平台与运维精选", "适合优先完成的平台与运维问题"],
-  ["llm-algorithm-library", "大模型算法真题库", "来自真实求职记录的问题"],
+  [
+    "llm-algorithm-library",
+    "大模型算法完整题库",
+    "来自面经、官方材料和论文的问题",
+  ],
   ["llm-algorithm-core", "大模型算法精选", "适合优先完成的大模型算法问题"],
   [
     "agent-evaluation-library",
-    "Agent 评测真题库",
-    "有明确来源的 Agent 评测问题",
+    "Agent 评测完整题库",
+    "来自面经、Benchmark 和工程材料的 Agent 评测问题",
   ],
   ["agent-evaluation-core", "Agent 评测精选", "适合优先完成的 Agent 评测问题"],
   [
     "agent-engineering-library",
-    "Agent 工程真题库",
-    "有明确来源的 Agent 工程问题",
+    "Agent 工程完整题库",
+    "来自面经、官方文档和工程材料的 Agent 工程问题",
   ],
   ["agent-engineering-core", "Agent 工程精选", "适合优先完成的 Agent 工程问题"],
 ].map(([id, label, description]) => ({ id, label, description }));
@@ -164,6 +168,30 @@ function inferQuestionType(prompt) {
 }
 
 function inferDifficulty(prompt, questionType) {
+  const challengeSignals = [
+    /一致性|consistency/i,
+    /并发|concurrency/i,
+    /故障|恢复|failure|recovery/i,
+    /隔离|安全|security|isolation/i,
+    /性能|延迟|吞吐|performance|latency|throughput/i,
+    /成本|预算|cost|budget/i,
+    /迁移|兼容|migration|compatib/i,
+    /调度|分片|复制|scheduling|shard|replication/i,
+  ].filter(pattern => pattern.test(prompt)).length;
+  if (
+    (questionType === "system-design" && prompt.length >= 85) ||
+    (prompt.length >= 120 && challengeSignals >= 2)
+  ) {
+    return 5;
+  }
+  if (
+    prompt.length >= 70 &&
+    /形式化|证明.{0,20}正确性|无锁.{0,30}内存序|编译器.{0,30}优化.{0,30}正确|内核.{0,30}调度|跨区域.{0,30}一致性|CUDA.{0,30}(?:内核|算子).{0,30}(?:优化|调度)|分布式.{0,30}(?:恢复|共识).{0,30}(?:证明|保证)/i.test(
+      prompt
+    )
+  ) {
+    return 5;
+  }
   if (
     /源码|底层|内核|架构|一致性|并发控制|系统设计|性能瓶颈|故障|internals|kernel|architecture|consistency|concurrency|bottleneck/i.test(
       prompt
@@ -171,13 +199,31 @@ function inferDifficulty(prompt, questionType) {
   ) {
     return 4;
   }
-  if (questionType === "coding" || questionType === "debugging") return 3;
+  if (
+    new Set([
+      "coding",
+      "debugging",
+      "scenario",
+      "testing",
+      "operations",
+      "system-design",
+    ]).has(questionType)
+  ) {
+    return 3;
+  }
   if (
     /原理|机制|实现|流程|取舍|优缺点|mechanism|implementation|trade-?off|lifecycle/i.test(
       prompt
     )
   ) {
     return 3;
+  }
+  if (
+    /^(?:什么是|请定义|定义)(?!.*(?:为什么|如何|区别|原理|机制|实现|边界|取舍|场景)).{2,30}[？?]$/i.test(
+      prompt
+    )
+  ) {
+    return 1;
   }
   if (/是什么|有哪些|作用|区别|^what |^which |^define /i.test(prompt)) return 2;
   return 2;
@@ -1102,6 +1148,8 @@ async function importJsonInbox() {
     "selenium-questions.json",
     "technical-community.json",
     "latest-trends.json",
+    "reviewed-technical-community.json",
+    "official-source-questions-reviewed.json",
   ]) {
     const path = join(inbox, file);
     let value;
@@ -1134,6 +1182,7 @@ async function importJsonInbox() {
             publishedAt: item.publishedAt,
             company: item.company,
             interviewStage: item.interviewStage,
+            originalPrompt: item.originalPrompt,
           },
         })
       );
@@ -1271,49 +1320,90 @@ function assignCoreCollections(questions) {
   const sourcePriority = question => {
     const kinds = new Set(question.occurrences.map(item => item.sourceKind));
     if (kinds.has("firsthand")) return 0;
-    if (kinds.has("curated-repository")) return 1;
-    return 2;
+    if (
+      kinds.has("official-documentation") ||
+      kinds.has("engineering-blog") ||
+      kinds.has("research-paper") ||
+      kinds.has("benchmark")
+    ) {
+      return 1;
+    }
+    if (kinds.has("curated-repository")) return 2;
+    return 3;
   };
 
+  function sortCoreCandidates(items) {
+    return [...items].sort((left, right) => {
+      const priority = sourcePriority(left) - sourcePriority(right);
+      if (priority !== 0) return priority;
+      const occurrenceDifference =
+        right.occurrences.length - left.occurrences.length;
+      if (occurrenceDifference !== 0) return occurrenceDifference;
+      const dateDifference = String(right.collectedAt ?? "").localeCompare(
+        String(left.collectedAt ?? "")
+      );
+      if (dateDifference !== 0) return dateDifference;
+      return left.prompt.length - right.prompt.length;
+    });
+  }
+
+  function takeByTopic(items, target, selected) {
+    const byTopic = new Map();
+    for (const question of sortCoreCandidates(items)) {
+      if (selected.has(question.id)) continue;
+      const queue = byTopic.get(question.topicId) ?? [];
+      queue.push(question);
+      byTopic.set(question.topicId, queue);
+    }
+    const queues = [...byTopic.values()];
+    let queueIndex = 0;
+    let added = 0;
+    while (added < target && queues.some(queue => queue.length > 0)) {
+      const queue = queues[queueIndex % queues.length];
+      queueIndex += 1;
+      const question = queue.shift();
+      if (!question || selected.has(question.id)) continue;
+      selected.add(question.id);
+      added += 1;
+    }
+    return added;
+  }
+
   for (const trackId of trackIds) {
-    const target = trackId === "frontend" ? 200 : 100;
+    const target = 100;
     const coreId = `${trackId}-core`;
     const trackQuestions = questions.filter(
       question => question.trackId === trackId
     );
-    const selected = new Set(
-      trackQuestions
-        .filter(question => question.collectionIds.includes(coreId))
-        .map(question => question.id)
-    );
-    const byTopic = new Map();
-    for (const question of trackQuestions
-      .filter(question => !selected.has(question.id))
-      .sort((left, right) => {
-        const priority = sourcePriority(left) - sourcePriority(right);
-        if (priority !== 0) return priority;
-        return (
-          left.difficulty - right.difficulty ||
-          left.prompt.length - right.prompt.length
-        );
-      })) {
-      const items = byTopic.get(question.topicId) ?? [];
-      items.push(question);
-      byTopic.set(question.topicId, items);
+    for (const question of trackQuestions) {
+      question.collectionIds = question.collectionIds.filter(
+        id => id !== coreId
+      );
     }
-    const topicQueues = [...byTopic.values()];
-    if (topicQueues.length === 0) continue;
-    let topicIndex = 0;
-    while (selected.size < Math.min(target, trackQuestions.length)) {
-      const queue = topicQueues[topicIndex % topicQueues.length];
-      topicIndex += 1;
-      const question = queue?.shift();
-      if (!question) {
-        if (topicQueues.every(items => items.length === 0)) break;
-        continue;
-      }
-      question.collectionIds.push(coreId);
-      selected.add(question.id);
+    const selected = new Set();
+    const difficultyTargets = new Map([
+      [1, 20],
+      [2, 35],
+      [3, 30],
+      [4, 12],
+      [5, 3],
+    ]);
+    for (const [difficulty, difficultyTarget] of difficultyTargets) {
+      takeByTopic(
+        trackQuestions.filter(question => question.difficulty === difficulty),
+        difficultyTarget,
+        selected
+      );
+    }
+    if (selected.size < Math.min(target, trackQuestions.length)) {
+      takeByTopic(
+        trackQuestions,
+        Math.min(target, trackQuestions.length) - selected.size,
+        selected
+      );
+    }
+    for (const question of trackQuestions) {
+      if (selected.has(question.id)) question.collectionIds.push(coreId);
     }
   }
   return questions;

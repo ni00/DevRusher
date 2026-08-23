@@ -32,6 +32,10 @@ export const questionSourceKinds = [
   "firsthand",
   "curated-repository",
   "technical-community",
+  "official-documentation",
+  "engineering-blog",
+  "research-paper",
+  "benchmark",
 ] as const;
 export type QuestionSourceKind = (typeof questionSourceKinds)[number];
 

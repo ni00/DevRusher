@@ -25,19 +25,19 @@ const trackOrder = [
 // enforce them as permanent publication gates.
 const trackRules = {
   fundamentals: {
-    limit: 1_000,
+    limit: 850,
     topicCaps: {
-      algorithms: 160,
-      "engineering-practice": 120,
-      networking: 110,
-      "computer-systems": 90,
-      databases: 90,
-      "software-design": 80,
-      "distributed-systems": 80,
+      algorithms: 200,
+      "engineering-practice": 130,
+      networking: 120,
+      "computer-systems": 110,
+      databases: 100,
+      "software-design": 90,
+      "distributed-systems": 100,
     },
   },
   frontend: {
-    limit: 1_000,
+    limit: 950,
     topicCaps: {
       "javascript-typescript": 230,
       "web-platform": 220,
@@ -52,81 +52,81 @@ const trackRules = {
     },
   },
   backend: {
-    limit: 1_000,
+    limit: 900,
     topicCaps: {
-      java: 150,
-      nodejs: 130,
-      cache: 100,
-      go: 90,
-      "distributed-systems": 100,
-      messaging: 90,
-      "relational-databases": 100,
-      "backend-system-design": 80,
+      java: 180,
+      nodejs: 160,
+      cache: 120,
+      go: 110,
+      "distributed-systems": 120,
+      messaging: 110,
+      "relational-databases": 120,
+      "backend-system-design": 100,
     },
   },
   mobile: {
-    limit: 1_000,
+    limit: 850,
     topicCaps: {
-      android: 130,
-      ios: 130,
-      "cross-platform": 110,
-      "modern-cross-platform": 110,
-      flutter: 90,
-      harmonyos: 90,
+      android: 150,
+      ios: 150,
+      "cross-platform": 130,
+      "modern-cross-platform": 120,
+      flutter: 100,
+      harmonyos: 100,
       "react-native": 80,
     },
   },
   quality: {
-    limit: 1_000,
+    limit: 800,
     topicCaps: {
-      "test-automation": 150,
-      "test-strategy": 130,
-      "unit-testing": 100,
-      "advanced-testing": 100,
-      "integration-contract": 90,
+      "test-automation": 170,
+      "test-strategy": 150,
+      "unit-testing": 110,
+      "advanced-testing": 120,
+      "integration-contract": 100,
       "performance-testing": 80,
       "security-testing": 70,
     },
   },
   platform: {
-    limit: 1_000,
+    limit: 850,
     topicCaps: {
-      containers: 120,
-      "delivery-iac": 110,
-      "linux-automation": 110,
-      observability: 110,
-      kubernetes: 110,
-      "sre-reliability": 80,
+      containers: 140,
+      "delivery-iac": 130,
+      "linux-automation": 130,
+      observability: 140,
+      kubernetes: 140,
+      "sre-reliability": 120,
     },
   },
   "llm-algorithm": {
-    limit: 1_000,
+    limit: 850,
     topicCaps: {
-      "model-architecture": 130,
-      "gpu-kernels": 110,
-      "ml-foundations": 100,
-      "post-training": 110,
-      "inference-serving": 120,
-      "model-evaluation": 80,
+      "model-architecture": 160,
+      "gpu-kernels": 140,
+      "ml-foundations": 130,
+      "post-training": 150,
+      "inference-serving": 160,
+      "model-evaluation": 110,
     },
   },
   "agent-evaluation": {
-    limit: 1_000,
+    limit: 800,
     topicCaps: {
-      "evaluation-design": 120,
-      "search-browser-rag": 80,
-      "datasets-benchmarks": 90,
-      "online-regression": 70,
-      "evaluation-platform": 60,
-      "safety-robustness": 70,
-      "trajectory-evaluation": 70,
-      "coding-tool-evaluation": 70,
+      "evaluation-design": 130,
+      "search-browser-rag": 90,
+      "datasets-benchmarks": 100,
+      "online-regression": 80,
+      "evaluation-platform": 70,
+      "safety-robustness": 80,
+      "trajectory-evaluation": 80,
+      "coding-tool-evaluation": 90,
       "judge-human": 70,
-      "efficiency-evaluation": 50,
+      "efficiency-evaluation": 60,
     },
   },
   "agent-engineering": {
-    limit: 1_000,
+    limit: 900,
     topicCaps: {
       "agent-foundations": 170,
       "context-engineering": 100,
@@ -201,11 +201,19 @@ function rejectionReason(question, prompt) {
   if (/[:：]$/.test(prompt) && !/[？?]/.test(prompt)) {
     return "dangling-colon";
   }
-  const strictPromptRelevance = new Set([
-    "llm-algorithm",
-    "agent-evaluation",
-    "agent-engineering",
-  ]).has(question.trackId);
+  const trustedDerivedSource = question.occurrences.some(item =>
+    new Set([
+      "official-documentation",
+      "engineering-blog",
+      "research-paper",
+      "benchmark",
+    ]).has(item.sourceKind)
+  );
+  const strictPromptRelevance =
+    !trustedDerivedSource &&
+    new Set(["llm-algorithm", "agent-evaluation", "agent-engineering"]).has(
+      question.trackId
+    );
   const relevanceText = strictPromptRelevance
     ? prompt
     : `${prompt} ${question.tags.join(" ")}`;
@@ -235,10 +243,18 @@ function yearOf(question) {
 function questionScore(question, prompt) {
   const kinds = new Set(question.occurrences.map(item => item.sourceKind));
   let score = kinds.has("firsthand")
-    ? 70
-    : kinds.has("curated-repository")
-      ? 38
-      : 24;
+    ? 80
+    : kinds.has("official-documentation")
+      ? 55
+      : kinds.has("engineering-blog")
+        ? 52
+        : kinds.has("benchmark")
+          ? 52
+          : kinds.has("research-paper")
+            ? 50
+            : kinds.has("curated-repository")
+              ? 40
+              : 25;
   if (
     question.occurrences.some(item =>
       /官方|RFC|W3C|OpenJDK|Kubernetes|React|Node\.js|PostgreSQL|Apache Kafka|Redis|JetBrains|Apple|Huawei|Lynx|OpenTelemetry|Sigstore|vLLM|SGLang|NVIDIA|Model Context Protocol|A2A|LangGraph|SWE-bench|Terminal-Bench|OSWorld|τ/i.test(
@@ -246,7 +262,7 @@ function questionScore(question, prompt) {
       )
     )
   ) {
-    score += 30;
+    score += 15;
   }
   score += Math.min(24, (question.occurrences.length - 1) * 8);
   if (question.collectionIds.some(id => id.endsWith("-core"))) score += 16;
@@ -332,6 +348,7 @@ async function curate() {
 
     const topicCounts = new Map();
     const selected = [];
+    const selectedIds = new Set();
     for (const candidate of candidates) {
       if (selected.length >= rule.limit) break;
       const topicId = candidate.question.topicId;
@@ -339,7 +356,20 @@ async function curate() {
       const count = topicCounts.get(topicId) ?? 0;
       if (count >= topicCap) continue;
       selected.push(candidate);
+      selectedIds.add(candidate.question.id);
       topicCounts.set(topicId, count + 1);
+    }
+
+    const minimumTarget = Math.min(820, rule.limit, candidates.length);
+    if (selected.length < minimumTarget) {
+      for (const candidate of candidates) {
+        if (selected.length >= minimumTarget) break;
+        if (selectedIds.has(candidate.question.id)) continue;
+        selected.push(candidate);
+        selectedIds.add(candidate.question.id);
+        const topicId = candidate.question.topicId;
+        topicCounts.set(topicId, (topicCounts.get(topicId) ?? 0) + 1);
+      }
     }
 
     selectedQuestionIdsByTrack[trackId] = selected

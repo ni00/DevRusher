@@ -21,6 +21,10 @@ const sourceKinds = new Set([
   "firsthand",
   "curated-repository",
   "technical-community",
+  "official-documentation",
+  "engineering-blog",
+  "research-paper",
+  "benchmark",
 ]);
 const questionTypes = new Set([
   "concept",

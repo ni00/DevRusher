@@ -25,6 +25,9 @@
     "content:import": "node scripts/content/import-real-sources.mjs",
     "content:curate": "node scripts/content/curate-final-dataset.mjs",
     "content:translate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/content/translate-questions.mjs",
+    "content:review-sources": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/content/review-source-questions.mjs",
+    "content:extract-official": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/content/extract-official-questions.mjs",
+    "content:review-derived": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/content/review-derived-questions.mjs",
     "prepare": "husky"
   },
   "dependencies": {
@@ -34,6 +37,7 @@
     "ai": "7.0.58",
     "clsx": "2.1.1",
     "lucide-react": "1.30.0",
+    "microlighter": "^2.1.0",
     "next": "16.3.0",
     "next-themes": "0.4.6",
     "pdfjs-dist": "6.2.108",

@@ -26,6 +26,9 @@ importers:
       lucide-react:
         specifier: 1.30.0
         version: 1.30.0(react@19.2.8)
+      microlighter:
+        specifier: ^2.1.0
+        version: 2.1.0
       next:
         specifier: 16.3.0
         version: 16.3.0(@babel/core@7.29.7(supports-color@7.1.0))(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -2053,6 +2056,10 @@ packages:
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
+
+  microlighter@2.1.0:
+    resolution: {integrity: sha512-lngSOqDbT7IuNV1OekRp0zRCOlhVEuSdQdbEZbkXfmQPYpeIArk5wyrUQTvBmeCqiy/ZDW/RLmbopI74JBnCIg==}
+    engines: {node: '>=18'}
 
   micromark-core-commonmark@2.0.0:
     resolution: {integrity: sha512-jThOz/pVmAYUtkroV3D5c1osFXAMv9e0ypGDOIZuCeAe91/sD6BoE2Sjzt30yuXtwOYUmySOhMas/PVyh02itA==}
@@ -4959,6 +4966,8 @@ snapshots:
       '@types/mdast': 4.0.4
 
   merge2@1.4.1: {}
+
+  microlighter@2.1.0: {}
 
   micromark-core-commonmark@2.0.0:
     dependencies:

@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import {
+  Check,
   CheckCircle2,
+  Copy,
   LoaderCircle,
   RefreshCw,
   Settings,
   Square,
+  TriangleAlert,
   X,
   Zap,
 } from "lucide-react";
@@ -22,6 +25,7 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { ScrollJumpControls } from "@/components/scroll-jump-controls";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { copyText } from "@/lib/clipboard";
 import { streamCompatibleChat } from "@/modules/ai/infrastructure/openai-compatible-browser-client";
 import { useAiSettings } from "@/modules/ai/ui/use-ai-settings";
 import { isAiEndpointReady } from "@/modules/ai/domain/settings";
@@ -47,6 +51,13 @@ const modeLabels: Record<AnalysisMode, string> = {
 };
 
 type AnalysisRequestStatus = "streaming" | "completed" | "error" | "stopped";
+type QuestionCopyStatus = "idle" | "copied" | "error";
+
+const questionCopyContent = {
+  idle: { label: "复制题目", icon: Copy },
+  copied: { label: "已复制", icon: Check },
+  error: { label: "复制失败", icon: TriangleAlert },
+} satisfies Record<QuestionCopyStatus, { label: string; icon: typeof Copy }>;
 
 function isAnalysisAbort(error: unknown, signal?: AbortSignal): boolean {
   return (
@@ -71,6 +82,7 @@ export function QuestionAnalysisDialog({
   const abortController = useRef<AbortController>(null);
   const activeAnalysisRunKey = useRef<string>(undefined);
   const generationVersion = useRef(0);
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultQuestionId = useRef<string | undefined>(undefined);
   const { settings, isReady } = useAiSettings();
   const [mode, setMode] = useState<AnalysisMode>("coach");
@@ -86,6 +98,8 @@ export function QuestionAnalysisDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [cachedAt, setCachedAt] = useState<string>();
   const [modeQuestionId, setModeQuestionId] = useState<string>();
+  const [questionCopyStatus, setQuestionCopyStatus] =
+    useState<QuestionCopyStatus>("idle");
   const orderedPromptPresets = useMemo(
     () => settings.analysisPromptOrder.map(getAnalysisPromptPreset),
     [settings.analysisPromptOrder]
@@ -402,14 +416,38 @@ export function QuestionAnalysisDialog({
     () => () => {
       generationVersion.current += 1;
       abortActiveRequest();
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
     },
     [abortActiveRequest]
   );
+
+  useEffect(() => {
+    setQuestionCopyStatus("idle");
+  }, [question?.id]);
+
+  const handleCopyQuestion = async () => {
+    if (!question?.prompt) return;
+
+    try {
+      await copyText(question.prompt);
+      setQuestionCopyStatus("copied");
+    } catch {
+      setQuestionCopyStatus("error");
+    }
+
+    if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    copyResetTimerRef.current = setTimeout(
+      () => setQuestionCopyStatus("idle"),
+      1800
+    );
+  };
 
   const visiblePromptId =
     mode === "super" ? settings.defaultAnalysisPrompt : mode;
   const visibleContent = results[visiblePromptId];
   const visibleError = errors[visiblePromptId];
+  const { label: questionCopyLabel, icon: QuestionCopyIcon } =
+    questionCopyContent[questionCopyStatus];
 
   return (
     <dialog
@@ -427,10 +465,30 @@ export function QuestionAnalysisDialog({
       )}
     >
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:gap-4 sm:px-6 sm:py-4">
-        <div className="min-w-0">
-          <h2 className="line-clamp-2 text-base font-semibold leading-6 sm:text-lg">
+        <div className="flex min-w-0 flex-1 items-start gap-1 sm:gap-2">
+          <h2 className="line-clamp-2 min-w-0 flex-1 text-base font-semibold leading-6 sm:text-lg">
             {question?.prompt}
           </h2>
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "-mt-1 h-8 shrink-0 px-2 text-xs",
+              questionCopyStatus === "copied" && "text-success",
+              questionCopyStatus === "error" && "text-destructive"
+            )}
+            aria-label={questionCopyLabel}
+            title={questionCopyLabel}
+            onClick={() => void handleCopyQuestion()}
+          >
+            <QuestionCopyIcon aria-hidden="true" />
+            <span className="hidden sm:inline" aria-hidden="true">
+              {questionCopyLabel}
+            </span>
+            <span className="sr-only" aria-live="polite">
+              {questionCopyLabel}
+            </span>
+          </Button>
         </div>
         <Button
           size="icon"
